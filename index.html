@@ -39,6 +39,7 @@
       align-items: center;
       padding: 1rem;
       position: relative;
+      touch-action: none;
     }
     .signature-box {
       position: absolute;
@@ -50,6 +51,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      touch-action: none;
     }
     .signature-controls {
       display: flex;
@@ -85,7 +87,6 @@
     <div id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></div>
     <input type="file" id="file-input" accept="application/pdf" />
   </header>
-
   <div id="pdf-container"></div>
 
   <script>
@@ -147,10 +148,11 @@
     function addSignatureBox() {
       const canvas = document.querySelector('#pdf-container canvas');
       if (!canvas) return alert('Primero carga un PDF');
+      const container = document.getElementById('pdf-container');
       const box = document.createElement('div');
       box.className = 'signature-box';
-      box.style.left = '100px';
-      box.style.top = '100px';
+      box.style.left = '50px';
+      box.style.top = '50px';
       box.style.width = '200px';
       box.style.height = '100px';
 
@@ -176,24 +178,19 @@
 
       const pad = document.createElement('canvas');
       pad.style.flex = '1';
-      pad.style.width = '100%';
-      pad.style.height = '100%';
       pad.width = 200;
       pad.height = 70;
+      pad.style.width = '100%';
+      pad.style.height = '100%';
       pad.style.pointerEvents = 'none';
       box.appendChild(pad);
 
-      makeDraggable(box, controls);
-      makeResizable(box, pad);
-      document.getElementById('pdf-container').appendChild(box);
-
       let drawEnabled = false;
-
       confirmBtn.onclick = () => {
         if (!drawEnabled) {
           pad.style.pointerEvents = 'auto';
-          drawEnabled = true;
           clearBtn.style.display = 'inline-block';
+          drawEnabled = true;
           enableDrawing(pad);
         } else {
           const ctx = canvas.getContext('2d');
@@ -206,12 +203,11 @@
         }
       };
 
-      clearBtn.onclick = () => {
-        const ctx = pad.getContext('2d');
-        ctx.clearRect(0, 0, pad.width, pad.height);
-      };
-
+      clearBtn.onclick = () => pad.getContext('2d').clearRect(0, 0, pad.width, pad.height);
       removeBtn.onclick = () => box.remove();
+
+      makeDraggable(box, controls, canvas);
+      container.appendChild(box);
     }
 
     function enableDrawing(canvas) {
@@ -221,99 +217,62 @@
       ctx.strokeStyle = 'black';
       let drawing = false;
 
-      function getPosition(e) {
+      function getPos(e) {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-          x: clientX - rect.left,
-          y: clientY - rect.top
-        };
+        const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        return { x, y };
       }
 
-      canvas.onmousedown = (e) => {
+      canvas.onpointerdown = e => {
         drawing = true;
-        const pos = getPosition(e);
+        const pos = getPos(e);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
         e.preventDefault();
       };
-      canvas.onmousemove = (e) => {
+      canvas.onpointermove = e => {
         if (!drawing) return;
-        const pos = getPosition(e);
+        const pos = getPos(e);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
         e.preventDefault();
       };
-      canvas.onmouseup = () => drawing = false;
-      canvas.onmouseleave = () => drawing = false;
-
-      canvas.ontouchstart = canvas.onmousedown;
-      canvas.ontouchmove = canvas.onmousemove;
-      canvas.ontouchend = () => drawing = false;
+      canvas.onpointerup = () => drawing = false;
+      canvas.onpointerleave = () => drawing = false;
     }
 
-    function makeDraggable(el, handle) {
-      let offsetX = 0, offsetY = 0, isDragging = false;
+    function makeDraggable(box, handle, boundaryCanvas) {
+      let offsetX = 0, offsetY = 0, dragging = false;
 
-      function startDrag(e) {
-        isDragging = true;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        offsetX = clientX - el.offsetLeft;
-        offsetY = clientY - el.offsetTop;
+      function getTouchEvent(e) {
+        return e.touches ? e.touches[0] : e;
+      }
+
+      handle.addEventListener('pointerdown', e => {
+        const ev = getTouchEvent(e);
+        dragging = true;
+        offsetX = ev.clientX - box.offsetLeft;
+        offsetY = ev.clientY - box.offsetTop;
         e.preventDefault();
-      }
-
-      function onDrag(e) {
-        if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        el.style.left = (clientX - offsetX) + 'px';
-        el.style.top = (clientY - offsetY) + 'px';
-        e.preventDefault();
-      }
-
-      function stopDrag() {
-        isDragging = false;
-      }
-
-      handle.addEventListener('mousedown', startDrag);
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-
-      handle.addEventListener('touchstart', startDrag);
-      document.addEventListener('touchmove', onDrag);
-      document.addEventListener('touchend', stopDrag);
-    }
-
-    function makeResizable(el, canvas) {
-      const observer = new ResizeObserver(() => {
-        canvas.width = el.offsetWidth;
-        canvas.height = el.offsetHeight - 30;
       });
-      observer.observe(el);
-    }
 
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF();
+      document.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const ev = getTouchEvent(e);
+        const canvasRect = boundaryCanvas.getBoundingClientRect();
+        let left = ev.clientX - offsetX;
+        let top = ev.clientY - offsetY;
 
-      for (let i = 0; i < pdfCanvases.length; i++) {
-        const canvas = pdfCanvases[i];
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (canvas.height * width) / canvas.width;
+        left = Math.max(canvasRect.left, Math.min(left, canvasRect.right - box.offsetWidth));
+        top = Math.max(canvasRect.top, Math.min(top, canvasRect.bottom - box.offsetHeight));
 
-        if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-      }
+        box.style.left = (left - canvasRect.left) + 'px';
+        box.style.top = (top - canvasRect.top) + 'px';
+        e.preventDefault();
+      });
 
-      pdf.save('documento_firmado.pdf');
-    }
-
-    function sharePDF() {
-      alert('Funcionalidad de compartir próximamente.');
+      document.addEventListener('pointerup', () => dragging = false);
     }
   </script>
 </body>
