@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -7,91 +7,66 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
       background: #f4f4f4;
     }
     header {
       background: #2c3e50;
       color: white;
-      padding: 10px;
+      padding: 1rem;
       text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
     }
     #toolbar {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      margin: 1rem 0;
     }
     .toolbar-btn {
-      background: #2980b9;
-      color: white;
+      background: #3498db;
       border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
+      padding: 0.5rem 1rem;
+      margin: 0.3rem;
+      color: white;
+      font-size: 1rem;
+      border-radius: 4px;
       cursor: pointer;
     }
-    #page-info {
-      color: white;
-      margin-top: 5px;
-      font-weight: bold;
-    }
-    #file-input {
-      margin-top: 10px;
-    }
-
     #pdf-container {
-      position: relative;
-      margin: 0 auto;
-      padding: 10px;
-      max-width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 1rem;
+      position: relative;
     }
-
-    canvas {
-      border: 1px solid #ccc;
-      z-index: 1;
-      max-width: 100%;
-      height: auto;
-    }
-
     .signature-box {
       position: absolute;
-      border: 2px dashed #3498db;
-      background: rgba(255, 255, 255, 0.0);
-      z-index: 5;
-      display: flex;
-      flex-direction: column;
+      border: 2px dashed #34495e;
+      background: transparent;
+      z-index: 1000;
       resize: both;
       overflow: hidden;
-      touch-action: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-
     .signature-controls {
       display: flex;
-      justify-content: space-around;
-      background: rgba(0, 0, 0, 0.3);
+      justify-content: space-between;
+      background: #ecf0f1;
+      padding: 4px;
       cursor: move;
-      user-select: none;
     }
-
     .signature-controls button {
       border: none;
       color: white;
-      font-weight: bold;
-      width: 30px;
-      height: 30px;
-      font-size: 16px;
+      font-size: 1rem;
       cursor: pointer;
+      margin: 0 2px;
+      border-radius: 4px;
+      padding: 4px 8px;
     }
-
     .confirm-btn { background: #2ecc71; }
     .remove-btn  { background: #e74c3c; }
     .clear-btn   { background: #f39c12; display: none; }
@@ -105,6 +80,7 @@
       <button class="toolbar-btn" onclick="nextPage()">➡️ Siguiente</button>
       <button class="toolbar-btn" onclick="addSignatureBox()">✍️ Añadir Firma</button>
       <button class="toolbar-btn" onclick="downloadPDF()">💾 Guardar</button>
+      <button class="toolbar-btn" onclick="sharePDF()">📤 Compartir</button>
     </div>
     <div id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></div>
     <input type="file" id="file-input" accept="application/pdf" />
@@ -114,15 +90,15 @@
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
     let pdfDoc = null, currentPage = 1, totalPages = 0;
-    let pdfCanvases = [];
+    let pdfCanvases = [], originalFileBuffer = null;
 
     document.getElementById('file-input').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function () {
+        originalFileBuffer = reader.result;
         try {
           const loadingTask = pdfjsLib.getDocument({ data: reader.result });
           pdfDoc = await loadingTask.promise;
@@ -218,6 +194,7 @@
           pad.style.pointerEvents = 'auto';
           drawEnabled = true;
           clearBtn.style.display = 'inline-block';
+          enableDrawing(pad);
         } else {
           const ctx = canvas.getContext('2d');
           const padRect = pad.getBoundingClientRect();
@@ -239,6 +216,9 @@
 
     function enableDrawing(canvas) {
       const ctx = canvas.getContext('2d');
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'black';
       let drawing = false;
 
       function getPosition(e) {
@@ -251,34 +231,26 @@
         };
       }
 
-      function start(e) {
+      canvas.onmousedown = (e) => {
         drawing = true;
         const pos = getPosition(e);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
         e.preventDefault();
-      }
-
-      function draw(e) {
+      };
+      canvas.onmousemove = (e) => {
         if (!drawing) return;
         const pos = getPosition(e);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
         e.preventDefault();
-      }
+      };
+      canvas.onmouseup = () => drawing = false;
+      canvas.onmouseleave = () => drawing = false;
 
-      function end() {
-        drawing = false;
-      }
-
-      canvas.addEventListener('mousedown', start);
-      canvas.addEventListener('mousemove', draw);
-      canvas.addEventListener('mouseup', end);
-      canvas.addEventListener('mouseleave', end);
-
-      canvas.addEventListener('touchstart', start);
-      canvas.addEventListener('touchmove', draw);
-      canvas.addEventListener('touchend', end);
+      canvas.ontouchstart = canvas.onmousedown;
+      canvas.ontouchmove = canvas.onmousemove;
+      canvas.ontouchend = () => drawing = false;
     }
 
     function makeDraggable(el, handle) {
@@ -319,23 +291,29 @@
       const observer = new ResizeObserver(() => {
         canvas.width = el.offsetWidth;
         canvas.height = el.offsetHeight - 30;
-        enableDrawing(canvas);
       });
       observer.observe(el);
     }
 
     async function downloadPDF() {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const pdf = new jsPDF();
+
       for (let i = 0; i < pdfCanvases.length; i++) {
-        if (i !== 0) doc.addPage();
         const canvas = pdfCanvases[i];
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const width = doc.internal.pageSize.getWidth();
-        const height = doc.internal.pageSize.getHeight();
-        doc.addImage(imgData, 'JPEG', 0, 0, width, height);
+        const width = pdf.internal.pageSize.getWidth();
+        const height = (canvas.height * width) / canvas.width;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
       }
-      doc.save("documento_firmado.pdf");
+
+      pdf.save('documento_firmado.pdf');
+    }
+
+    function sharePDF() {
+      alert('Funcionalidad de compartir próximamente.');
     }
   </script>
 </body>
