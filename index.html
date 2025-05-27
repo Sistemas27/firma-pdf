@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Firmar Documento PDF</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -21,6 +21,9 @@
       text-align: center;
     }
     #toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       margin: 1rem 0;
     }
     .toolbar-btn {
@@ -34,12 +37,20 @@
       cursor: pointer;
     }
     #pdf-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
       position: relative;
-      touch-action: none;
+      touch-action: manipulation;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #fff;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
     }
     .signature-box {
       position: absolute;
@@ -81,7 +92,7 @@
       <button class="toolbar-btn" onclick="prevPage()">⬅️ Anterior</button>
       <button class="toolbar-btn" onclick="nextPage()">➡️ Siguiente</button>
       <button class="toolbar-btn" onclick="addSignatureBox()">✍️ Añadir Firma</button>
-      <button class="toolbar-btn" onclick="downloadPDF()">💾 Guardar</button>
+      <button class="toolbar-btn" onclick="downloadPDF()">📂 Guardar</button>
       <button class="toolbar-btn" onclick="sharePDF()">📤 Compartir</button>
     </div>
     <div id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></div>
@@ -118,7 +129,7 @@
       const container = document.getElementById('pdf-container');
       container.innerHTML = '';
       pdfDoc.getPage(pageNum).then(page => {
-        const scale = 1.5;
+        const scale = 2.5;
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -273,6 +284,14 @@
       });
 
       document.addEventListener('pointerup', () => dragging = false);
+    }
+
+    function downloadPDF() {
+      alert('Funcionalidad de guardado pendiente de implementar.');
+    }
+
+    function sharePDF() {
+      alert('Funcionalidad de compartir pendiente de implementar.');
     }
   </script>
 </body>
