@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -24,9 +24,9 @@
     #toolbar {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
       gap: 10px;
       margin-top: 10px;
+      flex-wrap: wrap;
     }
     .toolbar-btn {
       background: #2980b9;
@@ -44,6 +44,7 @@
     #file-input {
       margin-top: 10px;
     }
+
     #pdf-container {
       position: relative;
       margin: 0 auto;
@@ -53,12 +54,14 @@
       flex-direction: column;
       align-items: center;
     }
+
     canvas {
       border: 1px solid #ccc;
       z-index: 1;
       max-width: 100%;
       height: auto;
     }
+
     .signature-box {
       position: absolute;
       border: 2px dashed #3498db;
@@ -70,12 +73,15 @@
       overflow: hidden;
       touch-action: none;
     }
+
     .signature-controls {
       display: flex;
       justify-content: space-around;
       background: rgba(0, 0, 0, 0.3);
-      cursor: grab;
+      cursor: move;
+      user-select: none;
     }
+
     .signature-controls button {
       border: none;
       color: white;
@@ -85,6 +91,7 @@
       font-size: 16px;
       cursor: pointer;
     }
+
     .confirm-btn { background: #2ecc71; }
     .remove-btn  { background: #e74c3c; }
     .clear-btn   { background: #f39c12; display: none; }
@@ -164,7 +171,6 @@
     function addSignatureBox() {
       const canvas = document.querySelector('#pdf-container canvas');
       if (!canvas) return alert('Primero carga un PDF');
-
       const box = document.createElement('div');
       box.className = 'signature-box';
       box.style.left = '100px';
@@ -212,7 +218,6 @@
           pad.style.pointerEvents = 'auto';
           drawEnabled = true;
           clearBtn.style.display = 'inline-block';
-          enableDrawing(pad);
         } else {
           const ctx = canvas.getContext('2d');
           const padRect = pad.getBoundingClientRect();
@@ -236,85 +241,85 @@
       const ctx = canvas.getContext('2d');
       let drawing = false;
 
-      function startDraw(e) {
+      function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top
+        };
+      }
+
+      function start(e) {
         drawing = true;
-        const pos = getPosition(e, canvas);
+        const pos = getPosition(e);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
+        e.preventDefault();
       }
 
       function draw(e) {
         if (!drawing) return;
-        const pos = getPosition(e, canvas);
+        const pos = getPosition(e);
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
+        e.preventDefault();
       }
 
-      function endDraw() {
+      function end() {
         drawing = false;
       }
 
-      canvas.onmousedown = startDraw;
-      canvas.onmousemove = draw;
-      canvas.onmouseup = endDraw;
-      canvas.onmouseleave = endDraw;
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', end);
+      canvas.addEventListener('mouseleave', end);
 
-      canvas.ontouchstart = e => { e.preventDefault(); startDraw(e.touches[0]); };
-      canvas.ontouchmove = e => { e.preventDefault(); draw(e.touches[0]); };
-      canvas.ontouchend = e => { e.preventDefault(); endDraw(); };
-    }
-
-    function getPosition(e, canvas) {
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
+      canvas.addEventListener('touchstart', start);
+      canvas.addEventListener('touchmove', draw);
+      canvas.addEventListener('touchend', end);
     }
 
     function makeDraggable(el, handle) {
-      let offsetX = 0, offsetY = 0, dragging = false;
+      let offsetX = 0, offsetY = 0, isDragging = false;
 
-      const startDrag = (x, y) => {
-        dragging = true;
-        offsetX = x - el.offsetLeft;
-        offsetY = y - el.offsetTop;
-        document.body.style.userSelect = 'none';
-      };
+      function startDrag(e) {
+        isDragging = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetX = clientX - el.offsetLeft;
+        offsetY = clientY - el.offsetTop;
+        e.preventDefault();
+      }
 
-      const doDrag = (x, y) => {
-        if (!dragging) return;
-        el.style.left = (x - offsetX) + 'px';
-        el.style.top = (y - offsetY) + 'px';
-      };
+      function onDrag(e) {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        el.style.left = (clientX - offsetX) + 'px';
+        el.style.top = (clientY - offsetY) + 'px';
+        e.preventDefault();
+      }
 
-      const endDrag = () => {
-        dragging = false;
-        document.body.style.userSelect = '';
-      };
+      function stopDrag() {
+        isDragging = false;
+      }
 
-      handle.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-      document.addEventListener('mousemove', e => doDrag(e.clientX, e.clientY));
-      document.addEventListener('mouseup', endDrag);
+      handle.addEventListener('mousedown', startDrag);
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', stopDrag);
 
-      handle.addEventListener('touchstart', e => {
-        const touch = e.touches[0];
-        startDrag(touch.clientX, touch.clientY);
-      }, { passive: false });
-
-      document.addEventListener('touchmove', e => {
-        if (!dragging) return;
-        const touch = e.touches[0];
-        doDrag(touch.clientX, touch.clientY);
-      }, { passive: false });
-
-      document.addEventListener('touchend', endDrag);
+      handle.addEventListener('touchstart', startDrag);
+      document.addEventListener('touchmove', onDrag);
+      document.addEventListener('touchend', stopDrag);
     }
 
     function makeResizable(el, canvas) {
       const observer = new ResizeObserver(() => {
         canvas.width = el.offsetWidth;
         canvas.height = el.offsetHeight - 30;
+        enableDrawing(canvas);
       });
       observer.observe(el);
     }
