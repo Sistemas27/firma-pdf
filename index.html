@@ -24,9 +24,9 @@
     #toolbar {
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-top: 10px;
-      flex-wrap: wrap;
     }
     .toolbar-btn {
       background: #2980b9;
@@ -44,7 +44,6 @@
     #file-input {
       margin-top: 10px;
     }
-
     #pdf-container {
       position: relative;
       margin: 0 auto;
@@ -54,12 +53,12 @@
       flex-direction: column;
       align-items: center;
     }
-
     canvas {
       border: 1px solid #ccc;
       z-index: 1;
+      max-width: 100%;
+      height: auto;
     }
-
     .signature-box {
       position: absolute;
       border: 2px dashed #3498db;
@@ -69,15 +68,14 @@
       flex-direction: column;
       resize: both;
       overflow: hidden;
+      touch-action: none;
     }
-
     .signature-controls {
       display: flex;
       justify-content: space-around;
       background: rgba(0, 0, 0, 0.3);
-      cursor: move;
+      cursor: grab;
     }
-
     .signature-controls button {
       border: none;
       color: white;
@@ -87,7 +85,6 @@
       font-size: 16px;
       cursor: pointer;
     }
-
     .confirm-btn { background: #2ecc71; }
     .remove-btn  { background: #e74c3c; }
     .clear-btn   { background: #f39c12; display: none; }
@@ -167,6 +164,7 @@
     function addSignatureBox() {
       const canvas = document.querySelector('#pdf-container canvas');
       if (!canvas) return alert('Primero carga un PDF');
+
       const box = document.createElement('div');
       box.className = 'signature-box';
       box.style.left = '100px';
@@ -214,6 +212,7 @@
           pad.style.pointerEvents = 'auto';
           drawEnabled = true;
           clearBtn.style.display = 'inline-block';
+          enableDrawing(pad);
         } else {
           const ctx = canvas.getContext('2d');
           const padRect = pad.getBoundingClientRect();
@@ -236,46 +235,86 @@
     function enableDrawing(canvas) {
       const ctx = canvas.getContext('2d');
       let drawing = false;
-      canvas.onmousedown = e => {
+
+      function startDraw(e) {
         drawing = true;
-        const rect = canvas.getBoundingClientRect();
+        const pos = getPosition(e, canvas);
         ctx.beginPath();
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-      };
-      canvas.onmousemove = e => {
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function draw(e) {
         if (!drawing) return;
-        const rect = canvas.getBoundingClientRect();
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        const pos = getPosition(e, canvas);
+        ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
+      }
+
+      function endDraw() {
+        drawing = false;
+      }
+
+      canvas.onmousedown = startDraw;
+      canvas.onmousemove = draw;
+      canvas.onmouseup = endDraw;
+      canvas.onmouseleave = endDraw;
+
+      canvas.ontouchstart = e => { e.preventDefault(); startDraw(e.touches[0]); };
+      canvas.ontouchmove = e => { e.preventDefault(); draw(e.touches[0]); };
+      canvas.ontouchend = e => { e.preventDefault(); endDraw(); };
+    }
+
+    function getPosition(e, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
       };
-      canvas.onmouseup = () => drawing = false;
-      canvas.onmouseleave = () => drawing = false;
     }
 
     function makeDraggable(el, handle) {
-      let offsetX, offsetY, isDragging = false;
-      handle.onmousedown = e => {
-        isDragging = true;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
+      let offsetX = 0, offsetY = 0, dragging = false;
+
+      const startDrag = (x, y) => {
+        dragging = true;
+        offsetX = x - el.offsetLeft;
+        offsetY = y - el.offsetTop;
         document.body.style.userSelect = 'none';
       };
-      document.onmousemove = e => {
-        if (!isDragging) return;
-        el.style.left = (e.clientX - offsetX) + 'px';
-        el.style.top = (e.clientY - offsetY) + 'px';
+
+      const doDrag = (x, y) => {
+        if (!dragging) return;
+        el.style.left = (x - offsetX) + 'px';
+        el.style.top = (y - offsetY) + 'px';
       };
-      document.onmouseup = () => {
-        isDragging = false;
+
+      const endDrag = () => {
+        dragging = false;
         document.body.style.userSelect = '';
       };
+
+      handle.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+      document.addEventListener('mousemove', e => doDrag(e.clientX, e.clientY));
+      document.addEventListener('mouseup', endDrag);
+
+      handle.addEventListener('touchstart', e => {
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+      }, { passive: false });
+
+      document.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const touch = e.touches[0];
+        doDrag(touch.clientX, touch.clientY);
+      }, { passive: false });
+
+      document.addEventListener('touchend', endDrag);
     }
 
     function makeResizable(el, canvas) {
       const observer = new ResizeObserver(() => {
         canvas.width = el.offsetWidth;
         canvas.height = el.offsetHeight - 30;
-        enableDrawing(canvas);
       });
       observer.observe(el);
     }
