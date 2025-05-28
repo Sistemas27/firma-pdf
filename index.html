@@ -19,15 +19,17 @@
     header {
       background: #2c3e50;
       color: white;
-      padding: 1rem;
+      padding: 0.75rem; /* Reducido padding para móviles */
       text-align: center;
-      display: flex; /* Añadido para centrar contenido */
-      flex-direction: column; /* Apilar elementos verticalmente */
-      align-items: center; /* Centrar horizontalmente */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     header h2 {
-        margin-bottom: 0.75rem; /* Espacio debajo del título */
+        margin-top: 0.25rem;
+        margin-bottom: 0.5rem; /* Reducido espacio */
+        font-size: 1.25rem; /* Ligeramente más pequeño */
     }
 
     #toolbar {
@@ -35,35 +37,39 @@
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      margin: 0.5rem 0;
-      gap: 0.5rem; /* Espacio entre elementos de la toolbar */
+      margin-bottom: 0.5rem; /* Solo margen inferior */
+      gap: 0.3rem; /* Espacio reducido para móviles */
+      width: 100%;
     }
 
     .toolbar-btn {
       background: #3498db;
       border: none;
-      padding: 0.6rem 1.1rem; /* Ligeramente más padding */
-      margin: 0.2rem; /* Ajustado margen individual */
+      padding: 0.5rem 0.8rem; /* Ajustado padding */
+      margin: 0.2rem;
       color: white;
-      font-size: 0.9rem;
+      font-size: 0.85rem; /* Ligeramente más pequeño */
       border-radius: 4px;
       cursor: pointer;
-      transition: background-color 0.3s ease; /* Transición suave */
+      transition: background-color 0.3s ease;
+      flex-grow: 1; /* Permitir que los botones crezcan */
+      flex-basis: auto; /* Base automática */
+      min-width: 100px; /* Ancho mínimo para evitar que se encojan demasiado */
     }
     .toolbar-btn:hover {
-        background-color: #2980b9; /* Color al pasar el mouse */
+        background-color: #2980b9;
     }
 
     #pdf-viewer {
       width: 100vw;
-      height: calc(100vh - 200px); /* Ajustar este valor según la altura real del header dinámicamente */
+      /* La altura se ajusta dinámicamente con JS */
       overflow: hidden;
       background: #fff;
       position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
-      touch-action: none;
+      touch-action: none; /* Importante para el paneo táctil del PDF y pinch-zoom */
     }
 
     #pdf-canvas {
@@ -73,112 +79,102 @@
 
     #page-info {
       text-align: center;
-      margin-top: 0.5rem; /* Espacio arriba de la info de página */
-      margin-bottom: 0.2rem; /* Reducido espacio abajo */
-      font-size: 0.9rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
     }
 
     #zoom-slider-container {
       position: fixed;
-      right: 10px;
+      right: 5px; /* Más cerca del borde en móviles */
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(0,0,0,0.05);
-      padding: 8px;
-      border-radius: 10px;
+      background: rgba(0,0,0,0.1); /* Ligeramente más visible */
+      padding: 5px;
+      border-radius: 8px;
       z-index: 9999;
     }
 
     #zoom-slider {
-      writing-mode: bt-lr; /* IE/Edge */
-      -webkit-appearance: slider-vertical; /* WebKit */
-      width: 20px;
-      height: 150px;
-      transform: rotate(180deg); /* Para que el min esté abajo */
+      writing-mode: bt-lr;
+      -webkit-appearance: slider-vertical;
+      width: 18px; /* Más delgado */
+      height: 120px; /* Más corto */
+      transform: rotate(180deg);
     }
 
-    input[type="file"]#file-input { /* Selector más específico */
+    input[type="file"]#file-input {
       padding: 0.5rem;
       border-radius: 4px;
-      border: 1px solid #555; /* Borde sutil */
-      background-color: #f8f9fa;
+      border: 1px solid #ccc; /* Borde más claro */
+      background-color: #fff;
       color: #333;
       cursor: pointer;
       font-size: 0.85rem;
-      max-width: 250px; /* Limitar ancho para que no ocupe demasiado */
+      width: 100%; /* Ocupar ancho disponible en la toolbar */
+      max-width: 280px; /* Máximo ancho */
+      margin: 0.2rem;
     }
-    input[type="file"]#file-input::file-selector-button { /* Estilo del botón interno */
-        background: #3498db;
+    input[type="file"]#file-input::file-selector-button {
+        background: #5dade2; /* Color ligeramente diferente */
         color: white;
         border: none;
         padding: 0.5rem 0.8rem;
         border-radius: 4px;
         cursor: pointer;
-        margin-right: 10px;
+        margin-right: 8px;
     }
 
-
-    /* ESTILOS NUEVOS SOLO PARA LA FIRMA (NO MODIFICAN NADA EXISTENTE) */
     .signature-box {
       position: absolute;
-      border: 2px dashed #3498db; /* Cambiado a dashed para diferenciar */
-      background-color: rgba(52, 152, 219, 0.1);
+      border: 2px dashed #3498db;
+      background-color: rgba(52, 152, 219, 0.15); /* Ligeramente más opaco */
       cursor: move;
       z-index: 100;
+      touch-action: none; /* Para permitir arrastre táctil del cuadro */
     }
 
     .signature-box-controls {
       position: absolute;
-      top: -30px; /* Ajustado para que no se solape con el borde */
+      top: -35px; /* Un poco más arriba para no solapar con manijas en pantallas pequeñas */
       left: 50%;
       transform: translateX(-50%);
-      width: auto; /* Ajustar al contenido */
       display: flex;
-      gap: 5px; /* Espacio entre botones */
-      padding: 2px;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 4px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      gap: 8px; /* Más espacio */
+      padding: 3px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
     }
 
     .signature-box-btn {
-      width: 24px; /* Aumentado tamaño */
-      height: 24px; /* Aumentado tamaño */
+      width: 28px; /* Más grandes para táctil */
+      height: 28px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 14px; /* Aumentado tamaño */
+      font-size: 16px; /* Íconos más grandes */
       border: none;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-
-    .signature-box-btn.confirm {
-      background-color: #2ecc71;
-      color: white;
-    }
-
-    .signature-box-btn.cancel {
-      background-color: #e74c3c;
-      color: white;
-    }
+    .signature-box-btn.confirm { background-color: #2ecc71; color: white; }
+    .signature-box-btn.cancel { background-color: #e74c3c; color: white; }
 
     .resize-handle {
       position: absolute;
-      width: 10px;
-      height: 10px;
+      width: 12px; /* Ligeramente más grandes para táctil */
+      height: 12px;
       background-color: #3498db;
-      border: 1px solid white; /* Mejor visibilidad */
-      border-radius: 50%; /* Redondos */
+      border: 1.5px solid white;
+      border-radius: 50%;
       z-index: 101;
     }
-
-    .resize-handle.nw { top: -5px; left: -5px; cursor: nwse-resize; }
-    .resize-handle.ne { top: -5px; right: -5px; cursor: nesw-resize; }
-    .resize-handle.sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
-    .resize-handle.se { bottom: -5px; right: -5px; cursor: nwse-resize; }
-
+    .resize-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+    .resize-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+    .resize-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+    .resize-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
 
     .signature-modal {
       position: fixed;
@@ -186,97 +182,115 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.75);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      padding: 10px; /* Espacio por si el contenido es muy grande */
     }
 
     .signature-container {
       background-color: white;
-      padding: 20px;
+      padding: 15px; /* Menos padding en móviles */
       border-radius: 8px;
-      width: 90%;
-      max-width: 500px; /* Ajustado para mejor visualización en móviles */
-      height: auto; /* Altura automática basada en contenido */
-      max-height: 80vh; /* Máxima altura */
+      width: 100%; /* Ocupar el ancho del padding del modal */
+      max-width: 500px;
+      height: auto;
+      max-height: 90vh; /* Un poco más de altura permitida */
       display: flex;
       flex-direction: column;
     }
 
     .signature-canvas-container {
       flex-grow: 1;
-      border: 1px solid #ccc;
+      border: 1px solid #b0bec5; /* Borde más suave */
       margin-bottom: 10px;
       position: relative;
-      min-height: 200px; /* Altura mínima para el canvas de firma */
+      min-height: 180px; /* Ajustado para móviles */
+      border-radius: 4px; /* Bordes redondeados */
+      overflow: hidden; /* Para que el canvas no se salga */
     }
 
     #signature-canvas {
       width: 100%;
       height: 100%;
-      background-color: white;
+      background-color: #ffffff;
       cursor: crosshair;
-      touch-action: none; /* Para evitar scroll al dibujar en táctil */
+      touch-action: none;
     }
 
     .signature-controls {
       display: flex;
-      justify-content: space-around; /* Mejor distribución */
-      flex-wrap: wrap; /* Para móviles */
-      gap: 10px; /* Espacio entre botones */
+      justify-content: space-between; /* Distribuir mejor */
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .signature-control-btn {
-      padding: 10px 15px; /* Ajustado padding */
+      padding: 10px 12px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 1rem; /* Ajustado tamaño de fuente */
-      flex-grow: 1; /* Para que ocupen espacio similar */
-      min-width: 100px; /* Ancho mínimo */
+      font-size: 0.9rem; /* Ligeramente más pequeño */
+      flex-grow: 1;
+      min-width: 90px;
       text-align: center;
+      transition: background-color 0.2s ease;
     }
-    .signature-control-btn.cancel { background-color: #e74c3c; color: white; }
-    .signature-control-btn.clear { background-color: #f39c12; color: white; }
-    .signature-control-btn.confirm { background-color: #2ecc71; color: white; }
+    .signature-control-btn.cancel { background-color: #ef5350; color: white; }
+    .signature-control-btn.clear { background-color: #ffab40; color: white; }
+    .signature-control-btn.confirm { background-color: #4caf50; color: white; }
+    .signature-control-btn:hover { filter: brightness(110%); }
+
 
     .embedded-signature {
       position: absolute;
-      z-index: 99; /* Por debajo del signature-box pero encima del canvas */
-      pointer-events: none; /* Para no interferir con el canvas */
-      transform-origin: top left; /* Importante para escalar desde la esquina */
+      z-index: 99;
+      pointer-events: none;
+      transform-origin: top left;
     }
 
-    /* Simple Message Modal */
     .message-modal {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.6);
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 2000; /* Encima de todo */
+        z-index: 2000;
+        padding: 15px;
     }
     .message-modal-content {
         background-color: white;
-        padding: 20px;
+        padding: 20px 25px;
         border-radius: 8px;
         text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        max-width: 400px;
+        width: 100%;
+    }
+    .message-modal-content p {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1rem;
+        color: #333;
     }
     .message-modal-content button {
         background-color: #3498db;
         color: white;
         border: none;
-        padding: 10px 20px;
+        padding: 10px 25px;
         border-radius: 4px;
         cursor: pointer;
-        margin-top: 15px;
+        font-size: 0.95rem;
+        transition: background-color 0.2s ease;
+    }
+    .message-modal-content button:hover {
+        background-color: #2980b9;
     }
 
   </style>
@@ -309,16 +323,30 @@
     let scale = 1;
     let canvas = document.getElementById('pdf-canvas');
     let context = canvas.getContext('2d');
+    const pdfViewer = document.getElementById('pdf-viewer'); // Get pdfViewer element
     let rendering = false;
     
-    let isDraggingPdf = false; // Renombrado para claridad
-    let startPos = { x: 0, y: 0 };
-    let translatePos = { x: 0, y: 0 }; // Traslación del canvas PDF
-    let lastTouchPos = { x: 0, y: 0 };
-    let isZoomed = false; // Para controlar si el PDF está zoomeado y se puede arrastrar
+    let isDraggingPdf = false;
+    let startPos = { x: 0, y: 0 }; // For single-touch/mouse PDF dragging
+    let translatePos = { x: 0, y: 0 };
+    // let lastTouchPos = { x: 0, y: 0 }; // No longer needed with new pinch logic
+    let isZoomed = false; // Indicates if PDF can be panned
     
-    let embeddedSignatures = []; // Almacena info de las firmas incrustadas
-    let isDraggingBox = false; // NUEVO: Para el arrastre del cuadro de firma
+    let embeddedSignatures = [];
+    let isDraggingBox = false; 
+    let signatureBoxDragOffset = { x: 0, y: 0 }; 
+
+    // State for pinch-to-zoom
+    let pinchState = {
+        active: false,
+        initialDistance: 0,
+        lastScale: 1, // Stores the scale at the beginning of the pinch
+        pdfPointX: 0, // Point on the PDF (unscaled) under the initial pinch center X
+        pdfPointY: 0, // Point on the PDF (unscaled) under the initial pinch center Y
+        screenCenterX: 0, // Initial screen X coordinate of the pinch center
+        screenCenterY: 0  // Initial screen Y coordinate of the pinch center
+    };
+
 
     // Función para mostrar mensajes modales
     function showMessage(message) {
@@ -341,7 +369,6 @@
         const reader = new FileReader();
         reader.onload = async function (e) {
           try {
-            // Inicializar PDF.js worker si no lo está
             if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
                  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
             }
@@ -349,14 +376,13 @@
             pdfDoc = await loadingTask.promise;
             totalPages = pdfDoc.numPages;
             currentPage = 1;
-            translatePos = { x: 0, y: 0 }; // Resetear pan
-            scale = 1; // Resetear zoom
+            translatePos = { x: 0, y: 0 };
+            scale = 1;
             document.getElementById('zoom-slider').value = scale;
             document.getElementById('total-pages').textContent = totalPages;
-            embeddedSignatures = []; // Limpiar firmas anteriores al cargar nuevo PDF
-            const existingSigElements = document.querySelectorAll('.embedded-signature');
-            existingSigElements.forEach(el => el.remove());
-            if (signatureBox) { // Limpiar cuadro de firma si existe
+            embeddedSignatures = [];
+            document.querySelectorAll('.embedded-signature').forEach(el => el.remove());
+            if (signatureBox) {
                 signatureBox.remove();
                 signatureBox = null;
             }
@@ -378,17 +404,13 @@
       pdfDoc.getPage(num).then(page => {
         const viewport = page.getViewport({ scale: scale });
         
-        // Ajustar el tamaño del canvas físico
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        // Ajustar el tamaño CSS del canvas para que se ajuste al contenedor si es necesario
-        // Esto es importante si el visor tiene un tamaño fijo y el PDF es más grande/pequeño
-        const viewer = document.getElementById('pdf-viewer');
-        const viewerWidth = viewer.clientWidth;
-        const viewerHeight = viewer.clientHeight;
+        const viewerWidth = pdfViewer.clientWidth;
+        const viewerHeight = pdfViewer.clientHeight;
 
-        // Centrar el canvas si es más pequeño que el visor
+        // Center canvas if smaller than viewer (important for initial render and after zoom out)
         if (viewport.width < viewerWidth) {
             canvas.style.left = `${(viewerWidth - viewport.width) / 2}px`;
         } else {
@@ -399,7 +421,7 @@
         } else {
             canvas.style.top = '0px';
         }
-        canvas.style.position = 'absolute'; // Para que left/top funcionen
+        canvas.style.position = 'absolute';
 
         const renderContext = { canvasContext: context, viewport };
         const renderTask = page.render(renderContext);
@@ -407,9 +429,10 @@
         renderTask.promise.then(() => {
           rendering = false;
           document.getElementById('current-page').textContent = num;
-          isZoomed = scale > 1 || viewport.width > viewer.clientWidth || viewport.height > viewer.clientHeight; // Se puede arrastrar si hay zoom o si el PDF es más grande que el visor
-          updateCanvasTransform(); // Aplicar traslación actual
-          repositionSignatures(); // Reposicionar firmas existentes
+          // Update isZoomed: can pan if content wider/taller than viewer OR if explicitly zoomed (scale !== 1)
+          isZoomed = scale !== 1 || viewport.width > viewerWidth || viewport.height > viewerHeight;
+          updateCanvasTransform(); // Applies translatePos
+          repositionSignatures();
         }).catch(err => {
             rendering = false;
             console.error("Error rendering page:", err);
@@ -423,86 +446,180 @@
     }
 
     function updateCanvasTransform() {
-        // Aplicar la traslación al canvas
+        // The canvas's own left/top style handles centering when smaller than viewer.
+        // translatePos is an additional offset from that centered/top-left position.
         canvas.style.transform = `translate(${translatePos.x}px, ${translatePos.y}px)`;
-        // Las firmas se reposicionan en base a la posición actual del canvas, no necesitan transform individual aquí
         repositionSignatures();
     }
 
-    // Arrastre del PDF
+    // Arrastre del PDF (Mouse on canvas)
     canvas.addEventListener('mousedown', (e) => {
-      if (!isZoomed && (canvas.width <= canvas.parentElement.clientWidth && canvas.height <= canvas.parentElement.clientHeight)) return; // Solo arrastrar si hay zoom o el contenido excede el visor
-      if (e.target !== canvas) return; // No arrastrar si se hace click en un elemento sobre el canvas
+      if (pinchState.active) return; // Don't drag if pinching
+      // Allow dragging if zoomed or content overflows
+      if (!isZoomed && (canvas.width <= pdfViewer.clientWidth && canvas.height <= pdfViewer.clientHeight)) return;
+      if (e.target !== canvas) return; // Only drag if click is directly on canvas
+
       isDraggingPdf = true;
-      startPos = { 
-          x: e.clientX - translatePos.x, 
-          y: e.clientY - translatePos.y 
-      };
+      startPos = { x: e.clientX - translatePos.x,  y: e.clientY - translatePos.y };
       canvas.style.cursor = 'grabbing';
     });
+    
+    // Touch event listeners on pdfViewer for PDF drag and pinch-zoom
+    pdfViewer.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) { // PINCH START
+            e.preventDefault(); // Prevent default browser pinch zoom/scroll
+            isDraggingPdf = false; 
+            isResizing = false; 
+            isDraggingBox = false;
 
-    window.addEventListener('mousemove', (e) => {
-      if (!isDraggingPdf) return;
-      translatePos.x = e.clientX - startPos.x;
-      translatePos.y = e.clientY - startPos.y;
-      
-      // Restringir el paneo para que el PDF no se salga completamente del visor
-      const viewer = document.getElementById('pdf-viewer');
-      const maxTranslateX = Math.max(0, (canvas.width * 1) - viewer.clientWidth + 50); // Permite un pequeño overpan
-      const maxTranslateY = Math.max(0, (canvas.height * 1) - viewer.clientHeight + 50);
-      const minTranslateX = Math.min(0, viewer.clientWidth - (canvas.width * 1) - 50);
-      const minTranslateY = Math.min(0, viewer.clientHeight - (canvas.height * 1) - 50);
+            pinchState.active = true;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            pinchState.initialDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+            pinchState.lastScale = scale; // Store scale at the beginning of this pinch
 
-      translatePos.x = Math.max(minTranslateX, Math.min(translatePos.x, maxTranslateX));
-      translatePos.y = Math.max(minTranslateY, Math.min(translatePos.y, maxTranslateY));
-      
-      updateCanvasTransform();
-    });
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            pinchState.screenCenterX = (touch1.clientX + touch2.clientX) / 2;
+            pinchState.screenCenterY = (touch1.clientY + touch2.clientY) / 2;
+            
+            // Calculate the point on the PDF (unscaled coordinates) that is under the pinch center
+            // This needs to account for the canvas's own offset (canvas.offsetLeft/Top) if it's centered
+            const canvasRect = canvas.getBoundingClientRect();
+            const pdfPointScreenX = pinchState.screenCenterX - canvasRect.left;
+            const pdfPointScreenY = pinchState.screenCenterY - canvasRect.top;
 
-    window.addEventListener('mouseup', () => {
-      if (isDraggingPdf) {
-        isDraggingPdf = false;
-        canvas.style.cursor = (isZoomed || (canvas.width > canvas.parentElement.clientWidth || canvas.height > canvas.parentElement.clientHeight)) ? 'grab' : 'default';
-      }
-    });
+            pinchState.pdfPointX = pdfPointScreenX / scale;
+            pinchState.pdfPointY = pdfPointScreenY / scale;
 
-    // Eventos táctiles para arrastrar PDF
-    canvas.addEventListener('touchstart', (e) => {
-        if (!isZoomed && (canvas.width <= canvas.parentElement.clientWidth && canvas.height <= canvas.parentElement.clientHeight)) return;
-        if (e.touches.length === 1) {
-            e.preventDefault(); // Prevenir scroll de la página
-            isDraggingPdf = true; // Usar la misma bandera que el mouse
+        } else if (e.touches.length === 1 && !pinchState.active) { // SINGLE TOUCH PDF DRAG START
+            // Allow dragging if zoomed or content overflows, and target is the canvas itself
+            if ((!isZoomed && (canvas.width <= pdfViewer.clientWidth && canvas.height <= pdfViewer.clientHeight)) || e.target !== canvas) {
+                 isDraggingPdf = false; return;
+            }
+            // e.preventDefault(); // Only if it causes issues, generally not needed for simple drag
+            isDraggingPdf = true;
             const touch = e.touches[0];
-            startPos = { 
-                x: touch.clientX - translatePos.x, 
-                y: touch.clientY - translatePos.y 
-            };
-            canvas.style.cursor = 'grabbing'; // Aunque no se vea en táctil, por consistencia
+            startPos = { x: touch.clientX - translatePos.x, y: touch.clientY - translatePos.y };
         }
     }, { passive: false });
 
-    canvas.addEventListener('touchmove', (e) => {
-        if (!isDraggingPdf || e.touches.length !== 1) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        translatePos.x = touch.clientX - startPos.x;
-        translatePos.y = touch.clientY - startPos.y;
-        // Aplicar mismas restricciones de paneo que en mousemove
-        const viewer = document.getElementById('pdf-viewer');
-        const maxTranslateX = Math.max(0, (canvas.width * 1) - viewer.clientWidth + 50);
-        const maxTranslateY = Math.max(0, (canvas.height * 1) - viewer.clientHeight + 50);
-        const minTranslateX = Math.min(0, viewer.clientWidth - (canvas.width * 1) - 50);
-        const minTranslateY = Math.min(0, viewer.clientHeight - (canvas.height * 1) - 50);
 
-        translatePos.x = Math.max(minTranslateX, Math.min(translatePos.x, maxTranslateX));
-        translatePos.y = Math.max(minTranslateY, Math.min(translatePos.y, maxTranslateY));
+    function handlePdfMove(clientX, clientY) {
+        if (!isDraggingPdf) return;
+        
+        let newTranslateX = clientX - startPos.x;
+        let newTranslateY = clientY - startPos.y;
+        
+        const viewerWidth = pdfViewer.clientWidth;
+        const viewerHeight = pdfViewer.clientHeight;
+        const canvasWidth = canvas.width; // This is already scaled viewport width
+        const canvasHeight = canvas.height; // This is already scaled viewport height
+
+        const overpanMargin = 30; // Reduced overpan
+
+        // Horizontal panning constraints
+        if (canvasWidth > viewerWidth) {
+            const minX = viewerWidth - canvasWidth - overpanMargin;
+            const maxX = overpanMargin;
+            newTranslateX = Math.max(minX, Math.min(newTranslateX, maxX));
+        } else {
+            newTranslateX = 0; // No horizontal pan if canvas fits
+        }
+
+        // Vertical panning constraints
+        if (canvasHeight > viewerHeight) {
+            const minY = viewerHeight - canvasHeight - overpanMargin;
+            const maxY = overpanMargin;
+            newTranslateY = Math.max(minY, Math.min(newTranslateY, maxY));
+        } else {
+            newTranslateY = 0; // No vertical pan if canvas fits
+        }
+        
+        translatePos.x = newTranslateX;
+        translatePos.y = newTranslateY;
         updateCanvasTransform();
+    }
+
+    function handlePinchMove(touch1, touch2) {
+        if (!pinchState.active || pinchState.initialDistance === 0) return;
+
+        const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+        let newScale = pinchState.lastScale * (currentDistance / pinchState.initialDistance);
+        newScale = Math.min(3.0, Math.max(0.5, newScale)); // Clamp scale
+
+        const oldScale = scale; // Scale before this move event
+        scale = newScale; // Update global scale
+
+        // The screen center of the pinch should remain over the same point on the PDF.
+        // pinchState.pdfPointX/Y is the target point on the unscaled PDF.
+        // pinchState.screenCenterX/Y is the target screen position for that PDF point.
+        
+        // We need the canvas's current offset within the viewer to correctly calculate the new translatePos
+        // because canvas.style.left/top might be non-zero if the canvas is centered.
+        const canvasRect = canvas.getBoundingClientRect();
+        const viewerRect = pdfViewer.getBoundingClientRect();
+        const canvasCurrentScreenLeft = canvasRect.left - viewerRect.left; // Canvas X relative to viewer
+        const canvasCurrentScreenTop = canvasRect.top - viewerRect.top;   // Canvas Y relative to viewer
+
+        // The new position of (pdfPointX * scale, pdfPointY * scale) on the scaled canvas
+        // should align with (pinchState.screenCenterX - viewerRect.left - canvas.offsetLeft, pinchState.screenCenterY - viewerRect.top - canvas.offsetTop)
+        // translatePos.x is the translation of the canvas content *relative to its own 0,0 (which might be offset by canvas.style.left/top)*
+
+        translatePos.x = (pinchState.screenCenterX - viewerRect.left - canvas.offsetLeft) - (pinchState.pdfPointX * scale);
+        translatePos.y = (pinchState.screenCenterY - viewerRect.top - canvas.offsetTop) - (pinchState.pdfPointY * scale);
+        
+        document.getElementById('zoom-slider').value = scale.toFixed(1);
+        renderPage(currentPage); // This will re-render with new scale, set new canvas.width/height,
+                                 // re-center canvas via style.left/top if needed, and then apply translatePos.
+    }
+
+
+    // Global move listeners
+    window.addEventListener('mousemove', (e) => {
+        if (isDraggingPdf && !pinchState.active) handlePdfMove(e.clientX, e.clientY);
+        if (isResizing) handleResizeMove(e.clientX, e.clientY); // Assumes isResizing is true
+        if (isDraggingBox) handleBoxDragMove(e.clientX, e.clientY); // Assumes isDraggingBox is true
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (pinchState.active && e.touches.length === 2) {
+            e.preventDefault(); 
+            handlePinchMove(e.touches[0], e.touches[1]);
+        } else if (isDraggingPdf && e.touches.length === 1 && !pinchState.active) {
+            // e.preventDefault(); // Optional: if single touch drag causes page scroll
+            const touch = e.touches[0];
+            handlePdfMove(touch.clientX, touch.clientY);
+        } else if (isResizing && e.touches.length === 1 && !pinchState.active) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleResizeMove(touch.clientX, touch.clientY);
+        } else if (isDraggingBox && e.touches.length === 1 && !pinchState.active) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleBoxDragMove(touch.clientX, touch.clientY);
+        }
     }, { passive: false });
 
-    canvas.addEventListener('touchend', (e) => {
+    // Global end listeners
+    window.addEventListener('mouseup', () => {
         if (isDraggingPdf) {
             isDraggingPdf = false;
-            canvas.style.cursor = (isZoomed || (canvas.width > canvas.parentElement.clientWidth || canvas.height > canvas.parentElement.clientHeight)) ? 'grab' : 'default';
+            canvas.style.cursor = (isZoomed || (canvas.width > pdfViewer.clientWidth || canvas.height > pdfViewer.clientHeight)) ? 'grab' : 'default';
+        }
+        if (isDraggingBox) isDraggingBox = false;
+        if (isResizing) { isResizing = false; resizeHandleType = null;}
+        // Pinch state is reset by touch count in touchend
+    });
+    window.addEventListener('touchend', (e) => {
+        if (isDraggingPdf) {
+            isDraggingPdf = false;
+        }
+        if (isDraggingBox) isDraggingBox = false;
+        if (isResizing) { isResizing = false; resizeHandleType = null; }
+        
+        if (pinchState.active && e.touches.length < 2) {
+            pinchState.active = false;
+            // No need to reset other pinchState values here, they get re-init on next pinch start
         }
     });
 
@@ -524,16 +641,68 @@
     document.getElementById('zoom-slider').addEventListener('input', function () {
       if (!pdfDoc) return;
       scale = parseFloat(this.value);
-      // No resetear translatePos aquí para que el zoom sea sobre el área visible
+      // When changing scale with slider, we want to zoom towards center of viewer
+      // This requires adjusting translatePos similar to pinch zoom logic, but simpler:
+      // 1. Get current center of the PDF content on screen.
+      // 2. Calculate what translatePos would make this point stay centered after new scale.
+      const viewerRect = pdfViewer.getBoundingClientRect();
+      const oldScale = pinchState.lastScale || 1; // A bit of a hack, need a reliable oldScale
+
+      // For slider zoom, let's try to zoom to the center of the current view of the PDF content
+      const currentCanvasRect = canvas.getBoundingClientRect();
+      const visiblePdfCenterX = viewerRect.left + viewerRect.width / 2;
+      const visiblePdfCenterY = viewerRect.top + viewerRect.height / 2;
+
+      // Point on PDF (unscaled) that is currently at the center of the viewer
+      const pdfPointX = (visiblePdfCenterX - currentCanvasRect.left) / oldScale;
+      const pdfPointY = (visiblePdfCenterY - currentCanvasRect.top) / oldScale;
+      
+      // Calculate new translatePos to keep this pdfPoint at the center of the viewer
+      // This needs to consider that canvas.offsetLeft/Top might change after renderPage
+      // This is complex. A simpler slider zoom just scales, then user re-pans.
+      // For now, let slider zoom be simple, without translatePos adjustment. User can re-pan.
+      // TODO: Implement centered zoom for slider if desired.
+      
       renderPage(currentPage);
+      pinchState.lastScale = scale; // Update for next potential pinch
     });
 
-    document.getElementById('pdf-viewer').addEventListener('wheel', function (e) {
+    pdfViewer.addEventListener('wheel', function (e) {
       if (!pdfDoc) return;
       e.preventDefault();
+      
+      const oldScale = scale;
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newScale = parseFloat((scale + delta).toFixed(1));
-      scale = Math.min(3, Math.max(0.5, newScale));
+      let newScale = parseFloat((scale + delta).toFixed(1)); // Keep to one decimal place
+      newScale = Math.min(3.0, Math.max(0.5, newScale));
+      
+      if (newScale === oldScale) return; // No change, no re-render
+
+      // Zoom towards mouse pointer
+      const viewerRect = pdfViewer.getBoundingClientRect();
+      const mouseXViewer = e.clientX - viewerRect.left; // Mouse X relative to viewer
+      const mouseYViewer = e.clientY - viewerRect.top; // Mouse Y relative to viewer
+
+      // Point on PDF (unscaled) under the mouse pointer
+      // Needs to account for canvas's own offset (style.left/top) and current translatePos
+      const canvasRect = canvas.getBoundingClientRect(); // Current position of canvas on screen
+      const mouseXOnCanvas = e.clientX - canvasRect.left; // Mouse X relative to displayed canvas
+      const mouseYOnCanvas = e.clientY - canvasRect.top; // Mouse Y relative to displayed canvas
+
+      const pdfPointX = mouseXOnCanvas / oldScale;
+      const pdfPointY = mouseYOnCanvas / oldScale;
+
+      scale = newScale; // Update global scale
+
+      // New translatePos to keep pdfPoint under the mouse pointer (mouseXViewer, mouseYViewer)
+      // translatePos.x = mouseXViewer - (pdfPointX * scale) - parseFloat(canvas.style.left || 0)
+      // translatePos.y = mouseYViewer - (pdfPointY * scale) - parseFloat(canvas.style.top || 0)
+      // The canvas.style.left/top is applied by renderPage. translatePos is relative to that.
+      // So, the target screen position for the scaled pdfPoint is (mouseXViewer - canvas.offsetLeft).
+      translatePos.x = (mouseXViewer - parseFloat(canvas.style.left || 0)) - (pdfPointX * scale);
+      translatePos.y = (mouseYViewer - parseFloat(canvas.style.top || 0)) - (pdfPointY * scale);
+
+
       document.getElementById('zoom-slider').value = scale.toFixed(1);
       renderPage(currentPage);
     }, { passive: false });
@@ -543,20 +712,15 @@
             showMessage("Carga un PDF primero.");
             return;
         }
-
         const { jsPDF } = window.jspdf;
-        const newPdf = new jsPDF(); // Crear una instancia para cada página o manejar multipágina
-
-        // Eliminar todas las páginas por defecto si las crea
-        while (newPdf.getNumberOfPages() > 0) {
-            newPdf.deletePage(1);
-        }
+        const newPdfDocGen = new jsPDF(); // Renamed to avoid conflict
+        while (newPdfDocGen.getNumberOfPages() > 0) { newPdfDocGen.deletePage(1); }
         
         showMessage("Preparando PDF para descarga...");
 
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: 2 }); // Usar una escala alta para buena calidad
+            const viewport = page.getViewport({ scale: 2 }); 
 
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -565,11 +729,9 @@
 
             await page.render({ canvasContext: tempCtx, viewport }).promise;
 
-            // Dibujar firmas de esta página en el tempCanvas
             embeddedSignatures.filter(sig => sig.page === i).forEach(sigInfo => {
                 const img = new Image();
-                img.src = sigInfo.dataURL; // Necesitaremos guardar dataURL en signatureInfo
-                // Coordenadas y tamaño en el tempCanvas (escala 2)
+                img.src = sigInfo.dataURL;
                 const x = sigInfo.x * 2; 
                 const y = sigInfo.y * 2;
                 const width = sigInfo.width * 2;
@@ -577,31 +739,29 @@
                 tempCtx.drawImage(img, x, y, width, height);
             });
             
-            const imgData = tempCanvas.toDataURL('image/jpeg', 0.9); // JPEG para tamaño, PNG para calidad
+            const imgData = tempCanvas.toDataURL('image/jpeg', 0.85); 
             
-            // Añadir página al PDF con las dimensiones correctas
-            // jsPDF usa puntos (72 DPI). El viewport de PDF.js está en puntos.
-            newPdf.addPage([viewport.width, viewport.height]);
-            newPdf.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
+            newPdfDocGen.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'l' : 'p');
+            newPdfDocGen.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
         }
         
-        newPdf.save('documento-firmado.pdf');
+        newPdfDocGen.save('documento-firmado.pdf');
         showMessage("PDF guardado.");
     }
 
-    // ========== SISTEMA DE FIRMA DIGITAL (MODIFICADO Y MEJORADO) ==========
-    let signatureBox = null; // El recuadro movible/redimensionable
+    // ========== SISTEMA DE FIRMA DIGITAL ==========
+    let signatureBox = null;
     let isResizing = false;
-    let resizeHandleType = null; // 'nw', 'ne', 'sw', 'se'
-    let startBoxPos = { x: 0, y: 0 }; // Posición inicial del recuadro al redimensionar
-    let startBoxSize = { width: 0, height: 0 }; // Tamaño inicial del recuadro
-    let startMousePos = { x: 0, y: 0 }; // Posición inicial del mouse al redimensionar
+    let resizeHandleType = null;
+    let startBoxPos = { x: 0, y: 0 };
+    let startBoxSize = { width: 0, height: 0 };
+    let startPointerPos = { x: 0, y: 0 }; 
 
-    let signatureModal = null; // El modal para dibujar
-    let signatureCanvas = null; // El canvas dentro del modal
-    let signatureCtx = null;
-    let isDrawing = false;
-    let lastDrawPos = { x: 0, y: 0 }; // Para dibujar líneas
+    let signatureModal = null;
+    let signaturePadCanvas = null; 
+    let signaturePadCtx = null;
+    let isDrawingOnPad = false;
+    let lastDrawPadPos = { x: 0, y: 0 };
 
 
     function addSignatureBox() {
@@ -609,22 +769,17 @@
         showMessage("Por favor, carga un documento PDF primero.");
         return;
       }
-
-      if (signatureBox) { // Si ya existe un recuadro, lo eliminamos
-        signatureBox.remove();
-      }
+      if (signatureBox) { signatureBox.remove(); }
 
       signatureBox = document.createElement('div');
       signatureBox.className = 'signature-box';
-      signatureBox.style.width = '200px';
-      signatureBox.style.height = '100px';
+      signatureBox.style.width = '150px'; 
+      signatureBox.style.height = '75px';
       
-      const viewer = document.getElementById('pdf-viewer');
-      const viewerRect = viewer.getBoundingClientRect();
+      const viewerRect = pdfViewer.getBoundingClientRect();
       
-      // Centrar el recuadro en el visor
-      signatureBox.style.left = `${(viewerRect.width - 200) / 2}px`;
-      signatureBox.style.top = `${(viewerRect.height - 100) / 2}px`;
+      signatureBox.style.left = `${(viewerRect.width - 150) / 2}px`;
+      signatureBox.style.top = `${(viewerRect.height - 75) / 2}px`;
 
       const controls = document.createElement('div');
       controls.className = 'signature-box-controls';
@@ -632,25 +787,22 @@
       confirmBtn.className = 'signature-box-btn confirm';
       confirmBtn.innerHTML = '✔️';
       confirmBtn.title = 'Confirmar posición y firmar';
-      confirmBtn.onclick = openSignatureModal; // No addEventListener para evitar múltiples
+      confirmBtn.onclick = openSignatureModal;
       
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'signature-box-btn cancel';
       cancelBtn.innerHTML = '❌';
       cancelBtn.title = 'Cancelar firma';
-      cancelBtn.onclick = () => { // No addEventListener
-        signatureBox.remove();
-        signatureBox = null;
-      };
+      cancelBtn.onclick = () => { signatureBox.remove(); signatureBox = null; };
 
       controls.appendChild(confirmBtn);
       controls.appendChild(cancelBtn);
       signatureBox.appendChild(controls);
 
       addResizeHandles(signatureBox);
-      setupBoxDrag(signatureBox); // Configurar arrastre del recuadro
+      setupBoxDragEvents(signatureBox);
 
-      viewer.appendChild(signatureBox);
+      pdfViewer.appendChild(signatureBox);
     }
 
     function addResizeHandles(box) {
@@ -661,118 +813,104 @@
         box.appendChild(handle);
         
         handle.addEventListener('mousedown', (e) => {
-          e.stopPropagation(); // Evitar que el arrastre del box se active
-          isResizing = true;
-          resizeHandleType = pos;
-          startBoxPos = { x: box.offsetLeft, y: box.offsetTop };
-          startBoxSize = { width: box.offsetWidth, height: box.offsetHeight };
-          startMousePos = { x: e.clientX, y: e.clientY };
-          
-          // Prevenir que el arrastre del PDF se active
-          isDraggingPdf = false; 
+          e.stopPropagation();
+          initResize(e.clientX, e.clientY, pos, box);
         });
+        handle.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          if (e.touches.length === 1) {
+            e.preventDefault(); // Prevent page scroll when dragging handles
+            initResize(e.touches[0].clientX, e.touches[0].clientY, pos, box);
+          }
+        }, { passive: false });
       });
     }
+
+    function initResize(clientX, clientY, handlePos, box) {
+        isResizing = true;
+        resizeHandleType = handlePos;
+        startBoxPos = { x: box.offsetLeft, y: box.offsetTop };
+        startBoxSize = { width: box.offsetWidth, height: box.offsetHeight };
+        startPointerPos = { x: clientX, y: clientY };
+        isDraggingPdf = false; 
+        isDraggingBox = false; 
+        pinchState.active = false; // Ensure pinch is not active
+    }
     
-    // Arrastre del cuadro de firma (signatureBox)
-    function setupBoxDrag(box) {
-        box.addEventListener('mousedown', (e) => {
-            // Solo arrastrar si se hace clic directamente en el box, no en sus hijos (controles, manijas)
-            if (e.target !== box) {
-                return;
-            }
-            e.stopPropagation(); // Evitar que el arrastre del PDF se active
+    function handleResizeMove(clientX, clientY) {
+        if (!isResizing || !resizeHandleType || !signatureBox) return;
 
-            isDraggingBox = true;
-            const viewer = document.getElementById('pdf-viewer');
-            const viewerRect = viewer.getBoundingClientRect();
+        const deltaX = clientX - startPointerPos.x;
+        const deltaY = clientY - startPointerPos.y;
+        
+        let newWidth = startBoxSize.width;
+        let newHeight = startBoxSize.height;
+        let newLeft = startBoxPos.x;
+        let newTop = startBoxPos.y;
 
-            // Offset del mouse respecto al top-left del box
-            // Usamos box.offsetLeft/Top que son relativos al viewer (offsetParent)
-            const mouseOffsetX = e.clientX - viewerRect.left - box.offsetLeft;
-            const mouseOffsetY = e.clientY - viewerRect.top - box.offsetTop;
+        const minWidth = 50;
+        const minHeight = 30;
+        const viewerRect = pdfViewer.getBoundingClientRect();
 
-            function moveBox(moveEvent) {
-                if (!isDraggingBox) return;
-                moveEvent.preventDefault();
+        if (resizeHandleType.includes('w')) { newWidth = Math.max(minWidth, startBoxSize.width - deltaX); newLeft = startBoxPos.x + (startBoxSize.width - newWidth); }
+        if (resizeHandleType.includes('e')) { newWidth = Math.max(minWidth, startBoxSize.width + deltaX); }
+        if (resizeHandleType.includes('n')) { newHeight = Math.max(minHeight, startBoxSize.height - deltaY); newTop = startBoxPos.y + (startBoxSize.height - newHeight); }
+        if (resizeHandleType.includes('s')) { newHeight = Math.max(minHeight, startBoxSize.height + deltaY); }
 
-                // Nueva posición del top-left del box, relativa al viewer
-                let newLeft = moveEvent.clientX - viewerRect.left - mouseOffsetX;
-                let newTop = moveEvent.clientY - viewerRect.top - mouseOffsetY;
+        if (newLeft < 0) { newWidth += newLeft; newLeft = 0; }
+        if (newTop < 0) { newHeight += newTop; newTop = 0; }
+        if (newLeft + newWidth > viewerRect.width) { newWidth = viewerRect.width - newLeft; }
+        if (newTop + newHeight > viewerRect.height) { newHeight = viewerRect.height - newTop; }
+        
+        newWidth = Math.max(minWidth, newWidth);
+        newHeight = Math.max(minHeight, newHeight);
 
-                // Constreñir a los límites del viewer
-                newLeft = Math.max(0, Math.min(newLeft, viewerRect.width - box.offsetWidth));
-                newTop = Math.max(0, Math.min(newTop, viewerRect.height - box.offsetHeight));
-
-                box.style.left = `${newLeft}px`;
-                box.style.top = `${newTop}px`;
-            }
-
-            function stopMoving() {
-                isDraggingBox = false;
-                window.removeEventListener('mousemove', moveBox);
-                window.removeEventListener('mouseup', stopMoving);
-            }
-
-            window.addEventListener('mousemove', moveBox);
-            window.addEventListener('mouseup', stopMoving);
-        });
+        signatureBox.style.width = `${newWidth}px`;
+        signatureBox.style.height = `${newHeight}px`;
+        signatureBox.style.left = `${newLeft}px`;
+        signatureBox.style.top = `${newTop}px`;
     }
 
-    // Redimensionamiento del signatureBox (manijas)
-    window.addEventListener('mousemove', (e) => {
-      if (!isResizing || !resizeHandleType || !signatureBox) return;
-      e.preventDefault();
+    // Arrastre del cuadro de firma (signatureBox)
+    function setupBoxDragEvents(box) {
+        function initBoxDrag(clientX, clientY) {
+            isDraggingBox = true;
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            signatureBoxDragOffset.x = clientX - viewerRect.left - box.offsetLeft;
+            signatureBoxDragOffset.y = clientY - viewerRect.top - box.offsetTop;
+            isDraggingPdf = false; 
+            isResizing = false; 
+            pinchState.active = false; // Ensure pinch is not active
+        }
 
-      const deltaX = e.clientX - startMousePos.x;
-      const deltaY = e.clientY - startMousePos.y;
-      
-      let newWidth = startBoxSize.width;
-      let newHeight = startBoxSize.height;
-      let newLeft = startBoxPos.x;
-      let newTop = startBoxPos.y;
+        box.addEventListener('mousedown', (e) => {
+            if (e.target === box) { 
+                e.stopPropagation();
+                initBoxDrag(e.clientX, e.clientY);
+            }
+        });
+        box.addEventListener('touchstart', (e) => {
+            if (e.target === box && e.touches.length === 1) {
+                e.stopPropagation();
+                e.preventDefault(); // Prevent page scroll when dragging box
+                initBoxDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+    }
+    
+    function handleBoxDragMove(clientX, clientY) {
+        if (!isDraggingBox || !signatureBox) return;
+        const viewerRect = pdfViewer.getBoundingClientRect();
 
-      const minWidth = 50;
-      const minHeight = 30;
-      const viewer = document.getElementById('pdf-viewer');
-      const viewerRect = viewer.getBoundingClientRect();
+        let newLeft = clientX - viewerRect.left - signatureBoxDragOffset.x;
+        let newTop = clientY - viewerRect.top - signatureBoxDragOffset.y;
 
-      if (resizeHandleType.includes('w')) { // nw, sw
-        newWidth = Math.max(minWidth, startBoxSize.width - deltaX);
-        newLeft = startBoxPos.x + (startBoxSize.width - newWidth);
-      }
-      if (resizeHandleType.includes('e')) { // ne, se
-        newWidth = Math.max(minWidth, startBoxSize.width + deltaX);
-      }
-      if (resizeHandleType.includes('n')) { // nw, ne
-        newHeight = Math.max(minHeight, startBoxSize.height - deltaY);
-        newTop = startBoxPos.y + (startBoxSize.height - newHeight);
-      }
-      if (resizeHandleType.includes('s')) { // sw, se
-        newHeight = Math.max(minHeight, startBoxSize.height + deltaY);
-      }
+        newLeft = Math.max(0, Math.min(newLeft, viewerRect.width - signatureBox.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, viewerRect.height - signatureBox.offsetHeight));
 
-      // Boundary checks
-      if (newLeft < 0) { newWidth += newLeft; newLeft = 0; }
-      if (newTop < 0) { newHeight += newTop; newTop = 0; }
-      if (newLeft + newWidth > viewerRect.width) { newWidth = viewerRect.width - newLeft; }
-      if (newTop + newHeight > viewerRect.height) { newHeight = viewerRect.height - newTop; }
-      
-      newWidth = Math.max(minWidth, newWidth);
-      newHeight = Math.max(minHeight, newHeight);
-
-      signatureBox.style.width = `${newWidth}px`;
-      signatureBox.style.height = `${newHeight}px`;
-      signatureBox.style.left = `${newLeft}px`;
-      signatureBox.style.top = `${newTop}px`;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
-        resizeHandleType = null;
-      }
-    });
+        signatureBox.style.left = `${newLeft}px`;
+        signatureBox.style.top = `${newTop}px`;
+    }
 
     function openSignatureModal() {
       if (!signatureBox) return;
@@ -786,14 +924,13 @@
       const canvasContainer = document.createElement('div');
       canvasContainer.className = 'signature-canvas-container';
       
-      signatureCanvas = document.createElement('canvas');
-      signatureCanvas.id = 'signature-canvas';
-      // El tamaño del canvas de dibujo se ajustará con JS
+      signaturePadCanvas = document.createElement('canvas'); 
+      signaturePadCanvas.id = 'signature-canvas'; 
       
-      signatureCtx = signatureCanvas.getContext('2d');
-      
-      canvasContainer.appendChild(signatureCanvas);
+      canvasContainer.appendChild(signaturePadCanvas);
       container.appendChild(canvasContainer);
+      
+      signaturePadCtx = signaturePadCanvas.getContext('2d');
       
       const controls = document.createElement('div');
       controls.className = 'signature-controls';
@@ -806,11 +943,11 @@
       const clearBtn = document.createElement('button');
       clearBtn.className = 'signature-control-btn clear';
       clearBtn.textContent = '↩️ Limpiar';
-      clearBtn.onclick = () => { signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); };
+      clearBtn.onclick = () => { signaturePadCtx.clearRect(0, 0, signaturePadCanvas.width, signaturePadCanvas.height); };
       
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'signature-control-btn confirm';
-      confirmBtn.textContent = '✔️ Confirmar Firma';
+      confirmBtn.textContent = '✔️ Firmar';
       confirmBtn.onclick = embedSignature;
       
       controls.appendChild(cancelBtn);
@@ -821,146 +958,124 @@
       signatureModal.appendChild(container);
       document.body.appendChild(signatureModal);
 
-      // Ajustar tamaño del canvas de firma después de añadirlo al DOM
-      // para que getBoundingClientRect funcione correctamente.
-      requestAnimationFrame(() => {
+      requestAnimationFrame(() => { 
         const rect = canvasContainer.getBoundingClientRect();
-        signatureCanvas.width = rect.width;
-        signatureCanvas.height = rect.height;
-        signatureCtx.lineWidth = 2;
-        signatureCtx.lineCap = 'round';
-        signatureCtx.strokeStyle = '#000000';
+        signaturePadCanvas.width = rect.width; 
+        signaturePadCanvas.height = rect.height; 
+        signaturePadCtx.lineWidth = 2; 
+        signaturePadCtx.lineCap = 'round';
+        signaturePadCtx.strokeStyle = '#000000';
       });
       
-      setupDrawingEvents();
+      setupSignaturePadDrawingEvents();
     }
 
-    function setupDrawingEvents() {
-      function getDrawPosition(e) {
-        const rect = signatureCanvas.getBoundingClientRect();
+    function setupSignaturePadDrawingEvents() {
+      function getPadPosition(e) {
+        const rect = signaturePadCanvas.getBoundingClientRect();
         let clientX, clientY;
-        if (e.touches && e.touches.length > 0) {
+        if (e.type.startsWith('touch')) {
             clientX = e.touches[0].clientX;
             clientY = e.touches[0].clientY;
         } else {
             clientX = e.clientX;
             clientY = e.clientY;
         }
-        // Escalar coordenadas al tamaño real del canvas si CSS lo ha redimensionado
         return {
-          x: (clientX - rect.left) * (signatureCanvas.width / rect.width),
-          y: (clientY - rect.top) * (signatureCanvas.height / rect.height)
+          x: (clientX - rect.left) * (signaturePadCanvas.width / rect.width),
+          y: (clientY - rect.top) * (signaturePadCanvas.height / rect.height)
         };
       }
 
-      function startDraw(e) {
+      function startPadDraw(e) {
+        e.preventDefault(); 
+        isDrawingOnPad = true;
+        lastDrawPadPos = getPadPosition(e);
+      }
+
+      function drawOnPad(e) {
+        if (!isDrawingOnPad) return;
         e.preventDefault();
-        isDrawing = true;
-        lastDrawPos = getDrawPosition(e);
+        const currentPos = getPadPosition(e);
+        signaturePadCtx.beginPath();
+        signaturePadCtx.moveTo(lastDrawPadPos.x, lastDrawPadPos.y);
+        signaturePadCtx.lineTo(currentPos.x, currentPos.y);
+        signaturePadCtx.stroke();
+        lastDrawPadPos = currentPos;
       }
 
-      function draw(e) {
-        if (!isDrawing) return;
-        e.preventDefault();
-        const currentPos = getDrawPosition(e);
-        signatureCtx.beginPath();
-        signatureCtx.moveTo(lastDrawPos.x, lastDrawPos.y);
-        signatureCtx.lineTo(currentPos.x, currentPos.y);
-        signatureCtx.stroke();
-        lastDrawPos = currentPos;
+      function stopPadDraw() {
+        isDrawingOnPad = false;
       }
 
-      function stopDraw() {
-        isDrawing = false;
-      }
-
-      signatureCanvas.addEventListener('mousedown', startDraw);
-      signatureCanvas.addEventListener('mousemove', draw);
-      signatureCanvas.addEventListener('mouseup', stopDraw);
-      signatureCanvas.addEventListener('mouseout', stopDraw); // Si el mouse sale del canvas
+      signaturePadCanvas.addEventListener('mousedown', startPadDraw);
+      signaturePadCanvas.addEventListener('mousemove', drawOnPad);
+      signaturePadCanvas.addEventListener('mouseup', stopPadDraw);
+      signaturePadCanvas.addEventListener('mouseout', stopPadDraw);
       
-      signatureCanvas.addEventListener('touchstart', startDraw, { passive: false });
-      signatureCanvas.addEventListener('touchmove', draw, { passive: false });
-      signatureCanvas.addEventListener('touchend', stopDraw);
+      signaturePadCanvas.addEventListener('touchstart', startPadDraw, { passive: false });
+      signaturePadCanvas.addEventListener('touchmove', drawOnPad, { passive: false });
+      signaturePadCanvas.addEventListener('touchend', stopPadDraw);
     }
 
-    // Incrustar la firma en el PDF (visualmente)
     function embedSignature() {
-        if (!signatureBox || !signatureCanvas || signatureCtx.canvas.toDataURL() === document.createElement('canvas').toDataURL()) {
+        if (!signatureBox || !signaturePadCanvas || signaturePadCtx.canvas.toDataURL() === document.createElement('canvas').toDataURL()) {
             showMessage("Por favor, dibuja una firma primero.");
             return;
         }
 
-        const dataURL = signatureCanvas.toDataURL('image/png');
+        const dataURL = signaturePadCanvas.toDataURL('image/png');
         const signatureImgElement = document.createElement('img');
         signatureImgElement.className = 'embedded-signature';
         signatureImgElement.src = dataURL;
 
-        const boxRect = signatureBox.getBoundingClientRect(); // Posición y tamaño del recuadro en el viewport
-        const viewer = document.getElementById('pdf-viewer');
-        const viewerRect = viewer.getBoundingClientRect(); // Posición del visor en el viewport
-        const pdfCanvasRect = canvas.getBoundingClientRect(); // Posición del canvas PDF en el viewport
+        const viewerRect = pdfViewer.getBoundingClientRect();
+        const pdfCanvasRect = canvas.getBoundingClientRect();
 
-        // Posición del recuadro (signatureBox) relativa al visor (pdf-viewer)
         const boxLeftInViewer = signatureBox.offsetLeft; 
         const boxTopInViewer = signatureBox.offsetTop;
 
-        // Posición del canvas PDF (pdf-canvas) relativa al visor (pdf-viewer)
-        // Esto considera la traslación (translatePos) y el centrado inicial del canvas.
-        const pdfCanvasLeftInViewer = pdfCanvasRect.left - viewerRect.left;
-        const pdfCanvasTopInViewer = pdfCanvasRect.top - viewerRect.top;
-        
-        // Posición del recuadro relativa al contenido del canvas PDF (escalado)
-        const sigXOnScaledCanvas = boxLeftInViewer - pdfCanvasLeftInViewer;
-        const sigYOnScaledCanvas = boxTopInViewer - pdfCanvasTopInViewer;
+        // Position of the signature box relative to the PDF canvas content (considering its current scale and translation)
+        // The canvas itself might be offset (canvas.offsetLeft/Top) if it's centered in the viewer.
+        // And then it's translated by translatePos.x/y
+        const sigXOnScaledCanvas = boxLeftInViewer - (canvas.offsetLeft + translatePos.x);
+        const sigYOnScaledCanvas = boxTopInViewer - (canvas.offsetTop + translatePos.y);
 
-        // Convertir a coordenadas relativas a la página PDF (sin escalar)
+
         const sigPageX = sigXOnScaledCanvas / scale;
         const sigPageY = sigYOnScaledCanvas / scale;
-        const sigPageWidth = signatureBox.offsetWidth / scale; // Usar offsetWidth del recuadro
-        const sigPageHeight = signatureBox.offsetHeight / scale; // Usar offsetHeight del recuadro
+        const sigPageWidth = signatureBox.offsetWidth / scale;
+        const sigPageHeight = signatureBox.offsetHeight / scale;
 
         const signatureInfo = {
-            element: signatureImgElement,
-            page: currentPage,
-            x: sigPageX,      // Pos X en la página PDF (sin escalar)
-            y: sigPageY,      // Pos Y en la página PDF (sin escalar)
-            width: sigPageWidth,  // Ancho en la página PDF (sin escalar)
-            height: sigPageHeight, // Alto en la página PDF (sin escalar)
-            dataURL: dataURL // Guardar para la descarga
+            element: signatureImgElement, page: currentPage,
+            x: sigPageX, y: sigPageY, width: sigPageWidth, height: sigPageHeight,
+            dataURL: dataURL
         };
         embeddedSignatures.push(signatureInfo);
-        
-        viewer.appendChild(signatureImgElement); // Añadir la imagen de la firma al visor
+        pdfViewer.appendChild(signatureImgElement);
 
-        // Limpiar
-        signatureBox.remove();
-        signatureBox = null;
-        if (signatureModal) {
-            signatureModal.remove();
-            signatureModal = null;
-        }
-        
-        repositionSignatures(); // Asegurar que la nueva firma se muestre correctamente
+        signatureBox.remove(); signatureBox = null;
+        if (signatureModal) { signatureModal.remove(); signatureModal = null; }
+        repositionSignatures();
     }
 
-    // Reposicionar todas las firmas visibles
     function repositionSignatures() {
-        const viewer = document.getElementById('pdf-viewer');
-        if (!viewer) return; // Salir si el visor no existe
-        const viewerRect = viewer.getBoundingClientRect();
-        const pdfCanvasRect = canvas.getBoundingClientRect();
+        if (!pdfViewer) return;
+        const viewerRect = pdfViewer.getBoundingClientRect();
+        const pdfCanvasRect = canvas.getBoundingClientRect(); // Current on-screen position of the PDF canvas
 
-        // Posición actual del canvas PDF (escalado y trasladado) relativa al visor
-        const pdfCanvasLeftInViewer = pdfCanvasRect.left - viewerRect.left;
-        const pdfCanvasTopInViewer = pdfCanvasRect.top - viewerRect.top;
+        // The PDF canvas's top-left corner on the screen, relative to the viewer.
+        // This includes its own centering (style.left/top) and its transform:translate.
+        const pdfCanvasScreenLeftInViewer = pdfCanvasRect.left - viewerRect.left;
+        const pdfCanvasScreenTopInViewer = pdfCanvasRect.top - viewerRect.top;
 
         embeddedSignatures.forEach(sig => {
             if (sig.element) {
                 if (sig.page === currentPage) {
-                    // Calcular posición y tamaño en pantalla para la firma
-                    const displayX = (sig.x * scale) + pdfCanvasLeftInViewer;
-                    const displayY = (sig.y * scale) + pdfCanvasTopInViewer;
+                    // Calculate display position based on the PDF canvas's current screen position
+                    const displayX = (sig.x * scale) + pdfCanvasScreenLeftInViewer;
+                    const displayY = (sig.y * scale) + pdfCanvasScreenTopInViewer;
                     const displayWidth = sig.width * scale;
                     const displayHeight = sig.height * scale;
 
@@ -968,26 +1083,21 @@
                     sig.element.style.top = `${displayY}px`;
                     sig.element.style.width = `${displayWidth}px`;
                     sig.element.style.height = `${displayHeight}px`;
-                    sig.element.style.display = 'block'; // Mostrarla
-                    sig.element.style.transform = ''; // No se necesita transform adicional aquí
+                    sig.element.style.display = 'block';
                 } else {
-                    sig.element.style.display = 'none'; // Ocultar si no es de la página actual
+                    sig.element.style.display = 'none';
                 }
             }
         });
     }
 
-    // Ajustar la altura del visor de PDF y renderizar al cargar y redimensionar
     function adjustViewerHeightAndRender() {
-        const headerElement = document.querySelector('header'); // Renombrado para evitar conflicto con la variable global 'header'
-        const pdfViewer = document.getElementById('pdf-viewer');
+        const headerElement = document.querySelector('header');
         if (headerElement && pdfViewer) {
             const headerHeight = headerElement.offsetHeight;
             pdfViewer.style.height = `calc(100vh - ${headerHeight}px)`;
         }
-        if (pdfDoc) { // Si hay un PDF cargado, re-renderizar para ajustar
-            renderPage(currentPage);
-        }
+        if (pdfDoc) { renderPage(currentPage); }
     }
 
     window.addEventListener('load', adjustViewerHeightAndRender);
