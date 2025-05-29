@@ -410,8 +410,8 @@
     const SUPABASE_URL = 'https://clkxkehypxmcqxcalmwn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReFf_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
 
-    let supabase = null;
-    
+    let supabaseClient = null; // Cambiado el nombre de la variable para evitar confusión con el objeto global
+
     // --- Función showMessage (asegúrate que esté definida ANTES de usarla) ---
     // Esta función es crucial para mostrar los errores de inicialización de Supabase.
     function showMessage(message, isUrl = false, urlToCopy = '') {
@@ -449,11 +449,15 @@
                             copyBtn.textContent = '¡Copiado!';
                             setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                         }).catch(err => {
+                            // Fallback para entornos donde navigator.clipboard.writeText puede fallar (ej. iframes no seguros)
                             if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
+                             urlInput.select(); // Asegurar selección para execCommand
+                             document.execCommand('copy');
                             copyBtn.textContent = '¡Copiado!';
                             setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                         });
                     } else {
+                         urlInput.select(); // Asegurar selección para execCommand
                         if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
                         copyBtn.textContent = '¡Copiado!';
                         setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
@@ -469,16 +473,17 @@
     // --- Inicialización de Supabase ---
     try {
         if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY') {
-            supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Correcto: usar 'supabase' (minúscula) que es el objeto global creado por la librería Supabase JS v2 vía CDN
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
             console.info("Cliente de Supabase inicializado correctamente.");
             // Opcional: showMessage("¡Supabase se inicializó bien!"); // Para feedback positivo si todo va bien
         } else {
             const placeholderErrorMsg = "Configuración Incompleta: Supabase URL o Anon Key parecen ser placeholders ('TU_SUPABASE_URL' / 'TU_SUPABASE_ANON_KEY').\n\nPor favor, verifica estas constantes en el código y reemplázalas con tus credenciales reales de Supabase.\n\nLa función de compartir no funcionará.";
             console.warn(placeholderErrorMsg);
             if (typeof showMessage === 'function') { // Asegurarse que showMessage está definida
-                 showMessage(placeholderErrorMsg);
+                  showMessage(placeholderErrorMsg);
             }
-            supabase = null; 
+            supabaseClient = null; 
         }
     } catch (error) {
         console.error("Error CRÍTICO inicializando Supabase:", error);
@@ -492,7 +497,7 @@
         if (typeof showMessage === 'function') { // Asegurarse que showMessage está definida
             showMessage(initErrorMsg);
         }
-        supabase = null;
+        supabaseClient = null;
     }
 
 
@@ -633,9 +638,9 @@
           updateCanvasTransform(); 
           repositionSignatures(); 
         }).catch(err => {
-            rendering = false;
-            console.error("Error rendering page:", err);
-            showMessage("Error al renderizar la página del PDF.");
+          rendering = false;
+          console.error("Error rendering page:", err);
+          showMessage("Error al renderizar la página del PDF.");
         });
       }).catch(err => {
           rendering = false;
@@ -918,9 +923,8 @@
             showMessage("Carga un PDF primero para compartir.");
             return;
         }
-        if (!supabase) {
-            // El error específico de inicialización ya debería haberse mostrado.
-            // Este mensaje es un recordatorio o fallback.
+        // Usar supabaseClient (la variable donde guardamos el cliente inicializado)
+        if (!supabaseClient) { 
             showMessage("Fallo en Supabase: La inicialización de Supabase no tuvo éxito (revisa mensajes anteriores para el detalle).\n\nLa función de compartir no está disponible.\n\nVerifica la consola y tu configuración de Supabase.");
             return;
         }
@@ -935,7 +939,8 @@
         const fileName = `shared/${Date.now()}_${originalFileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
         try {
-            const { data, error } = await supabase.storage
+            // Usar supabaseClient para las operaciones de storage
+            const { data, error } = await supabaseClient.storage 
                 .from('pdfs') 
                 .upload(fileName, pdfBlob, {
                     cacheControl: '3600', 
@@ -949,7 +954,8 @@
             }
 
             if (data) {
-                const { data: urlData } = supabase.storage
+                // Usar supabaseClient para obtener la URL
+                const { data: urlData } = supabaseClient.storage 
                     .from('pdfs')
                     .getPublicUrl(fileName);
 
@@ -1356,10 +1362,10 @@
 
         const signatureInfo = {
             element: signatureImgElement, 
-            page: currentPage,            
-            x: sigPageX, y: sigPageY,     
+            page: currentPage,         
+            x: sigPageX, y: sigPageY,   
             width: sigPageWidth, height: sigPageHeight, 
-            dataURL: dataURL              
+            dataURL: dataURL          
         };
         embeddedSignatures.push(signatureInfo); 
 
