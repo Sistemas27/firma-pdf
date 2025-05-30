@@ -911,7 +911,6 @@
                     tempCtx.drawImage(img, x, y, width, height);
                 } catch (imgLoadError) {
                     console.error("Saltando firma debido a error de carga:", imgLoadError);
-                    // Opcional: dibujar un placeholder o nada
                 }
             }
             
@@ -991,8 +990,8 @@
             };
             console.log("SharePDF: CORRECTO - markerToShare definido desde cuadro azul:", markerToShare);
         } else {
-             // Este log adicional ayuda si el IF anterior fue falso.
-            console.log("SharePDF: El IF para cuadro azul no confirmado fue FALSO. Verificando por qué no se entró para definir markerToShare...");
+            // Este log adicional ayuda si el IF anterior fue falso.
+            console.warn("SharePDF: El IF para cuadro azul no confirmado fue FALSO. Verificando por qué no se entró para definir markerToShare...");
             if (!signatureBoxEl) {
                 console.warn("SharePDF: Razón - signatureBoxEl es null.");
             } else if (signatureBoxEl.classList.contains('position-confirmed')) {
@@ -1001,27 +1000,27 @@
         }
 
         // Si markerToShare NO se pudo definir, mostrar instrucciones detalladas.
-        // ESTE ES EL BLOQUE MODIFICADO:
+        // ESTE ES EL BLOQUE MODIFICADO QUE YA TENÍAS Y QUE ES CORRECTO:
         if (!markerToShare) {
             let reason = "No se encontró un cuadro azul editable para compartir."; // Razón por defecto
             if (!signatureBoxEl) {
                 reason = "No hay ningún cuadro de firma en la página (signatureBoxEl es null).";
             } else if (signatureBoxEl.classList.contains('position-confirmed')) {
                 reason = "El cuadro de firma actual YA ESTÁ CONFIRMADO (tiene borde discontinuo, no es el cuadro azul inicial).";
+            } else { // Otra razón por la que el IF principal pudo fallar (aunque sería raro si signatureBoxEl existe)
+                 reason = "El cuadro de firma no está en el estado esperado (no es azul y editable).";
             }
             
-            // Log de error más detallado para la consola
             console.error("SharePDF: FALLO AL PREPARAR MARCADOR PARA COMPARTIR. " + reason, 
                           "Estado signatureBoxEl:", signatureBoxEl, 
-                          "Clases:", signatureBoxEl ? signatureBoxEl.classList.toString() : "N/A", // .toString() para mejor visualización de clases
+                          "Clases:", signatureBoxEl ? signatureBoxEl.classList.toString() : "N/A", 
                           "PDF Cargado:", pdfDoc ? "Sí" : "No", 
                           "Página Actual:", currentPage, "Total Páginas:", totalPages,
-                          "Canvas Width:", canvas.getBoundingClientRect().width, "Canvas Height:", canvas.getBoundingClientRect().height); // Añadido estado de canvas
+                          "Canvas Width:", canvas.getBoundingClientRect().width, "Canvas Height:", canvas.getBoundingClientRect().height);
             
-            // Mensaje al usuario más útil
             showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma'.\n2. Posiciona y dimensiona el cuadro azul.\n3. Presiona '📤 Compartir' (NO hagas clic en ✔️ en el cuadro azul).\n\n" +
                         "AYUDA: Asegúrate de que el cuadro en pantalla sea azul y tenga los controles ✔️ y 🗑️. Si el cuadro tiene borde discontinuo y controles ✍️ y ✏️, significa que ya lo confirmaste. Para compartirlo con Usuario B, edítalo (✏️) para que vuelva a ser azul, o elimínalo y añade uno nuevo.\n\n" +
-                        "(Diagnóstico: " + reason.split('(')[0].trim() + ")"); // Muestra la razón simplificada
+                        "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
             return;
         }
         // FIN DEL BLOQUE MODIFICADO
@@ -1501,10 +1500,10 @@
     }
 
     function repositionSignatures() {
-        if (!pdfViewer || !canvas || !pdfDoc) return; // Añadido !pdfDoc
+        if (!pdfViewer || !canvas || !pdfDoc) return; 
         const viewerRect = pdfViewer.getBoundingClientRect();
         const pdfCanvasRect = canvas.getBoundingClientRect(); 
-        if (pdfCanvasRect.width === 0 || pdfCanvasRect.height === 0) return; // No reposicionar si canvas no está listo
+        if (pdfCanvasRect.width === 0 || pdfCanvasRect.height === 0) return; 
 
         const pdfCanvasScreenLeftInViewer = pdfCanvasRect.left - viewerRect.left;
         const pdfCanvasScreenTopInViewer = pdfCanvasRect.top - viewerRect.top;
@@ -1556,7 +1555,7 @@
         userBSignatureAreaEl.id = 'user-b-sig-area';
         userBSignatureAreaEl.className = 'user-b-signature-area';
         userBSignatureAreaEl.innerHTML = '<span>Haz clic aquí para firmar</span>';
-        userBSignatureAreaEl.style.display = 'flex'; // Asegurar que el span se centre
+        userBSignatureAreaEl.style.display = 'flex'; 
 
         const canvasRect = canvas.getBoundingClientRect();
         const viewerRect = pdfViewer.getBoundingClientRect();
