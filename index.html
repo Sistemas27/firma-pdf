@@ -940,12 +940,16 @@
     }
 
     async function sharePDF() {
-        console.log("sharePDF llamado. signatureBoxEl:", signatureBoxEl);
+        // Tus logs iniciales (muy útiles, los conservo)
+        console.log("SharePDF: Iniciando proceso de compartir.");
+        console.log("SharePDF: Estado de signatureBoxEl:", signatureBoxEl);
         if (signatureBoxEl) {
-            console.log("signatureBoxEl.classList:", signatureBoxEl.classList);
-            console.log("Contiene 'position-confirmed':", signatureBoxEl.classList.contains('position-confirmed'));
+            console.log("SharePDF: Clases de signatureBoxEl:", signatureBoxEl.classList);
+            console.log("SharePDF: signatureBoxEl ¿contiene 'position-confirmed'?:", signatureBoxEl.classList.contains('position-confirmed'));
         }
-        console.log("activeSignatureBoxInfo:", activeSignatureBoxInfo);
+        console.log("SharePDF: Estado de activeSignatureBoxInfo:", activeSignatureBoxInfo);
+        console.log("SharePDF: Estado de pdfDoc:", pdfDoc ? "Cargado" : "No cargado", "Página actual:", currentPage, "Total de páginas:", totalPages);
+
 
         if (!pdfDoc) {
             showMessage("Carga un PDF primero para compartir.");
@@ -962,13 +966,18 @@
 
         let markerToShare = null;
 
+        // Intentar definir markerToShare si hay un cuadro azul no confirmado
         if (signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed')) {
+            console.log("SharePDF: Detectado signatureBoxEl activo y NO confirmado (cuadro azul).");
             const canvasRect = canvas.getBoundingClientRect();
-            if (!pdfDoc || canvasRect.width === 0 || canvasRect.height === 0 || currentPage < 1 || currentPage > totalPages ) {
+            console.log("SharePDF: Dimensiones de canvasRect:", canvasRect.width, "x", canvasRect.height);
+
+            if (canvasRect.width === 0 || canvasRect.height === 0 || currentPage < 1 || currentPage > totalPages ) {
+                console.error("SharePDF: FALLO - PDF no completamente cargado o cuadro en página inválida.");
                 showMessage("El PDF no está completamente cargado o el cuadro de firma no está sobre una página válida. Asegúrate que el PDF se vea correctamente e intenta de nuevo.");
-                console.warn("sharePDF: PDF no listo o cuadro no válido. canvasRect:", canvasRect, "currentPage:", currentPage, "totalPages:", totalPages);
-                return;
+                return; 
             }
+            
             const boxRect = signatureBoxEl.getBoundingClientRect();
             const boxRelToCanvasX = boxRect.left - canvasRect.left;
             const boxRelToCanvasY = boxRect.top - canvasRect.top;
@@ -980,20 +989,48 @@
                 height_val: boxRect.height / scale,
                 status: 'pending_user_b_signature'
             };
-            console.log("SharePDF: Preparado para compartir cuadro no confirmado:", markerToShare);
+            console.log("SharePDF: CORRECTO - markerToShare definido desde cuadro azul:", markerToShare);
+        } else {
+             // Este log adicional ayuda si el IF anterior fue falso.
+            console.log("SharePDF: El IF para cuadro azul no confirmado fue FALSO. Verificando por qué no se entró para definir markerToShare...");
+            if (!signatureBoxEl) {
+                console.warn("SharePDF: Razón - signatureBoxEl es null.");
+            } else if (signatureBoxEl.classList.contains('position-confirmed')) {
+                console.warn("SharePDF: Razón - signatureBoxEl SÍ existe, PERO YA ESTÁ CONFIRMADO.");
+            }
         }
 
+        // Si markerToShare NO se pudo definir, mostrar instrucciones detalladas.
+        // ESTE ES EL BLOQUE MODIFICADO:
         if (!markerToShare) {
-            console.log("SharePDF: No se encontró un cuadro no confirmado adecuado para compartir. Mostrando instrucciones.");
-            showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma'.\n2. Posiciona y dimensiona el cuadro azul.\n3. Presiona '📤 Compartir' (sin hacer clic en ✔️ en el cuadro azul).\n\nSi ya confirmaste un cuadro (borde discontinuo), edítalo (✏️) para volver al cuadro azul, o elimina y añade uno nuevo para compartir.");
+            let reason = "No se encontró un cuadro azul editable para compartir."; // Razón por defecto
+            if (!signatureBoxEl) {
+                reason = "No hay ningún cuadro de firma en la página (signatureBoxEl es null).";
+            } else if (signatureBoxEl.classList.contains('position-confirmed')) {
+                reason = "El cuadro de firma actual YA ESTÁ CONFIRMADO (tiene borde discontinuo, no es el cuadro azul inicial).";
+            }
+            
+            // Log de error más detallado para la consola
+            console.error("SharePDF: FALLO AL PREPARAR MARCADOR PARA COMPARTIR. " + reason, 
+                          "Estado signatureBoxEl:", signatureBoxEl, 
+                          "Clases:", signatureBoxEl ? signatureBoxEl.classList.toString() : "N/A", // .toString() para mejor visualización de clases
+                          "PDF Cargado:", pdfDoc ? "Sí" : "No", 
+                          "Página Actual:", currentPage, "Total Páginas:", totalPages,
+                          "Canvas Width:", canvas.getBoundingClientRect().width, "Canvas Height:", canvas.getBoundingClientRect().height); // Añadido estado de canvas
+            
+            // Mensaje al usuario más útil
+            showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma'.\n2. Posiciona y dimensiona el cuadro azul.\n3. Presiona '📤 Compartir' (NO hagas clic en ✔️ en el cuadro azul).\n\n" +
+                        "AYUDA: Asegúrate de que el cuadro en pantalla sea azul y tenga los controles ✔️ y 🗑️. Si el cuadro tiene borde discontinuo y controles ✍️ y ✏️, significa que ya lo confirmaste. Para compartirlo con Usuario B, edítalo (✏️) para que vuelva a ser azul, o elimínalo y añade uno nuevo.\n\n" +
+                        "(Diagnóstico: " + reason.split('(')[0].trim() + ")"); // Muestra la razón simplificada
             return;
         }
+        // FIN DEL BLOQUE MODIFICADO
         
         // Si llegamos aquí, markerToShare está definido y listo.
         showMessage("Preparando documento para compartir...");
         const documentId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         sharedDocIdForUserA = documentId;
-        const sanitizedFileName = originalFileName.replace(/[^a-zA-Z0-9._-]/g, '_'); // Sanitizar aún más
+        const sanitizedFileName = originalFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
         const originalPdfStoragePath = `documents/${documentId}/${sanitizedFileName}`;
 
         try {
