@@ -184,7 +184,7 @@
     .signature-box.position-confirmed {
         cursor: default; /* Cursor cuando la posición está bloqueada */
         border: 1px dashed #6c757d; /* Borde discontinuo gris */
-        background-color: transparent;
+        background-color: transparent; /* o rgba(0, 123, 255, 0.02) para un leve tinte */
         box-shadow: none; /* Sin sombra activa */
     }
 
@@ -410,33 +410,25 @@
     const SUPABASE_URL = 'https://clkxkehypxmcqxcalmwn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReFf_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
 
-    let supabaseClient = null; // Cambiado el nombre de la variable para evitar confusión con el objeto global
+    let supabaseClient = null;
 
-    // --- Función showMessage (asegúrate que esté definida ANTES de usarla) ---
-    // Esta función es crucial para mostrar los errores de inicialización de Supabase.
     function showMessage(message, isUrl = false, urlToCopy = '') {
         const existingModal = document.querySelector('.message-modal');
         if (existingModal) existingModal.remove();
-
         const modal = document.createElement('div');
         modal.className = 'message-modal';
         const content = document.createElement('div');
         content.className = 'message-modal-content';
-
         let htmlContent = `<p>${message.replace(/\n/g, '<br>')}</p>`;
-
         if (isUrl && urlToCopy) {
             htmlContent += `<input type="text" value="${urlToCopy}" id="shareable-url-input" readonly style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">`;
             htmlContent += `<button id="copy-url-btn">Copiar URL</button>`;
         }
         htmlContent += `<button id="ok-message-btn" style="margin-top: ${isUrl && urlToCopy ? '5px' : '0'};">OK</button>`;
-
         content.innerHTML = htmlContent;
         modal.appendChild(content);
         document.body.appendChild(modal);
-
         content.querySelector('#ok-message-btn').onclick = () => modal.remove();
-
         if (isUrl && urlToCopy) {
             const copyBtn = content.querySelector('#copy-url-btn');
             const urlInput = content.querySelector('#shareable-url-input');
@@ -449,15 +441,14 @@
                             copyBtn.textContent = '¡Copiado!';
                             setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                         }).catch(err => {
-                            // Fallback para entornos donde navigator.clipboard.writeText puede fallar (ej. iframes no seguros)
                             if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
-                             urlInput.select(); // Asegurar selección para execCommand
-                             document.execCommand('copy');
+                            urlInput.select(); 
+                            document.execCommand('copy');
                             copyBtn.textContent = '¡Copiado!';
                             setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                         });
                     } else {
-                         urlInput.select(); // Asegurar selección para execCommand
+                        urlInput.select(); 
                         if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
                         copyBtn.textContent = '¡Copiado!';
                         setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
@@ -470,39 +461,31 @@
         }
     }
     
-    // --- Inicialización de Supabase ---
     try {
         if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY') {
-            // Correcto: usar 'supabase' (minúscula) que es el objeto global creado por la librería Supabase JS v2 vía CDN
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
             console.info("Cliente de Supabase inicializado correctamente.");
-            // Opcional: showMessage("¡Supabase se inicializó bien!"); // Para feedback positivo si todo va bien
         } else {
-            const placeholderErrorMsg = "Configuración Incompleta: Supabase URL o Anon Key parecen ser placeholders ('TU_SUPABASE_URL' / 'TU_SUPABASE_ANON_KEY').\n\nPor favor, verifica estas constantes en el código y reemplázalas con tus credenciales reales de Supabase.\n\nLa función de compartir no funcionará.";
+            const placeholderErrorMsg = "Configuración Incompleta: Supabase URL o Anon Key son incorrectas.\n\nLa función de compartir no funcionará.";
             console.warn(placeholderErrorMsg);
-            if (typeof showMessage === 'function') { // Asegurarse que showMessage está definida
-                  showMessage(placeholderErrorMsg);
+            if (typeof showMessage === 'function') { 
+                showMessage(placeholderErrorMsg);
             }
             supabaseClient = null; 
         }
     } catch (error) {
         console.error("Error CRÍTICO inicializando Supabase:", error);
-        let detail = "Error desconocido durante la inicialización.";
-        if (error && error.message) {
-            detail = error.message;
-        } else if (typeof error === 'string') {
-            detail = error;
-        }
-        const initErrorMsg = `Error CRÍTICO al inicializar Supabase:\n\n${detail}\n\nLa función de compartir no funcionará.\n\nRevisa los detalles y tu configuración de Supabase (URL, Clave Anon, Nombre del Bucket 'pdfs', Políticas de Acceso del Bucket).`;
-        if (typeof showMessage === 'function') { // Asegurarse que showMessage está definida
+        let detail = (error && error.message) ? error.message : (typeof error === 'string' ? error : "Error desconocido.");
+        const initErrorMsg = `Error CRÍTICO al inicializar Supabase:\n\n${detail}\n\nLa función de compartir no funcionará.`;
+        if (typeof showMessage === 'function') { 
             showMessage(initErrorMsg);
         }
         supabaseClient = null;
     }
 
-
     let pdfDoc = null;
     let originalFileName = 'documento.pdf';
+    let originalPdfFileBlob = null; 
     let currentPage = 1;
     let totalPages = 0;
     let scale = 1;
@@ -518,6 +501,7 @@
 
     let embeddedSignatures = [];
     let signatureBoxEl = null;
+    let activeSignatureBoxInfo = null; 
     let isDraggingSigBox = false;
     let isResizingSigBox = false;
     let signatureBoxDragOffset = { x: 0, y: 0 };
@@ -545,11 +529,12 @@
       const file = this.files[0];
       if (file && file.type === 'application/pdf') {
         originalFileName = file.name;
+        originalPdfFileBlob = file; 
         const reader = new FileReader();
         reader.onload = async function (e) {
           try {
             if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
             }
             const loadingTask = pdfjsLib.getDocument({ data: e.target.result });
             pdfDoc = await loadingTask.promise;
@@ -560,29 +545,30 @@
             document.getElementById('zoom-slider').value = scale;
             document.getElementById('total-pages').textContent = totalPages;
             document.getElementById('current-page').textContent = currentPage;
-
             embeddedSignatures = [];
             document.querySelectorAll('.embedded-signature').forEach(el => el.remove());
             if (signatureBoxEl) {
                 signatureBoxEl.remove();
                 signatureBoxEl = null;
+                activeSignatureBoxInfo = null; 
             }
             pageVisitCounts = {};
             totalPageViewsSession = 0;
             updatePageUsageCounters(); 
-
             renderPage(currentPage);
           } catch (err) {
             showMessage('Error al cargar el PDF. Asegúrate de que es un archivo PDF válido.');
             console.error("Error loading PDF:", err);
             pdfDoc = null; 
+            originalPdfFileBlob = null;
           }
         };
         reader.readAsArrayBuffer(file);
       } else if (file) {
         showMessage('Por favor, selecciona un archivo PDF.');
+        originalPdfFileBlob = null;
       }
-       this.value = null; 
+        this.value = null; 
     });
 
     function updatePageUsageCounters() {
@@ -597,70 +583,49 @@
       if (!pdfDoc || rendering) return;
       rendering = true;
       updatePageUsageCounters(); 
-
       pdfDoc.getPage(num).then(page => {
         const dpr = window.devicePixelRatio || 1; 
         const viewportForRender = page.getViewport({ scale: scale * dpr }); 
-
         canvas.width = viewportForRender.width;
         canvas.height = viewportForRender.height;
-
         const viewportCss = page.getViewport({ scale: scale });
         canvas.style.width = `${viewportCss.width}px`;
         canvas.style.height = `${viewportCss.height}px`;
-
         const viewerWidth = pdfViewer.clientWidth;
         const viewerHeight = pdfViewer.clientHeight;
         const cssCanvasWidth = viewportCss.width;
         const cssCanvasHeight = viewportCss.height;
-
-        if (cssCanvasWidth < viewerWidth) {
-            canvas.style.left = `${(viewerWidth - cssCanvasWidth) / 2}px`;
-        } else {
-            canvas.style.left = '0px'; 
-        }
-        if (cssCanvasHeight < viewerHeight) {
-            canvas.style.top = `${(viewerHeight - cssCanvasHeight) / 2}px`;
-        } else {
-            canvas.style.top = '0px'; 
-        }
+        canvas.style.left = (cssCanvasWidth < viewerWidth) ? `${(viewerWidth - cssCanvasWidth) / 2}px` : '0px';
+        canvas.style.top = (cssCanvasHeight < viewerHeight) ? `${(viewerHeight - cssCanvasHeight) / 2}px` : '0px';
         canvas.style.position = 'absolute'; 
-
-        const renderContext = {
-            canvasContext: context,
-            viewport: viewportForRender
-        };
-        const renderTask = page.render(renderContext);
-        renderTask.promise.then(() => {
+        const renderContext = { canvasContext: context, viewport: viewportForRender };
+        page.render(renderContext).promise.then(() => {
           rendering = false;
           document.getElementById('current-page').textContent = num;
           isZoomed = scale !== 1 || cssCanvasWidth > viewerWidth || cssCanvasHeight > viewerHeight;
           updateCanvasTransform(); 
           repositionSignatures(); 
+          repositionActiveSignatureBox(); 
         }).catch(err => {
-          rendering = false;
-          console.error("Error rendering page:", err);
-          showMessage("Error al renderizar la página del PDF.");
+          rendering = false; console.error("Error rendering page:", err); showMessage("Error al renderizar la página del PDF.");
         });
       }).catch(err => {
-          rendering = false;
-          console.error("Error getting page:", err);
-          showMessage("Error al obtener la página del PDF.");
+          rendering = false; console.error("Error getting page:", err); showMessage("Error al obtener la página del PDF.");
       });
     }
 
     function updateCanvasTransform() {
         canvas.style.transform = `translate(${translatePos.x}px, ${translatePos.y}px)`;
         repositionSignatures(); 
+        repositionActiveSignatureBox(); 
     }
-
+    
     canvas.addEventListener('mousedown', (e) => {
         if (isDraggingSigBox || isResizingSigBox || pinchState.active) return; 
         const cssCanvasWidth = parseFloat(canvas.style.width);
         const cssCanvasHeight = parseFloat(canvas.style.height);
         if (!isZoomed && (cssCanvasWidth <= pdfViewer.clientWidth && cssCanvasHeight <= pdfViewer.clientHeight)) return;
         if (e.target !== canvas) return; 
-
         isDraggingPdf = true;
         startPos = { x: e.clientX - translatePos.x,  y: e.clientY - translatePos.y };
         canvas.style.cursor = 'grabbing';
@@ -671,7 +636,6 @@
             return;
         }
         if (isDraggingSigBox || isResizingSigBox) return; 
-
         if (e.touches.length === 2) { 
             e.preventDefault(); 
             isDraggingPdf = false; 
@@ -680,23 +644,19 @@
             const touch2 = e.touches[1];
             pinchState.initialDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
             pinchState.lastScale = scale; 
-
             const viewerRect = pdfViewer.getBoundingClientRect();
             pinchState.screenCenterX = (touch1.clientX + touch2.clientX) / 2;
             pinchState.screenCenterY = (touch1.clientY + touch2.clientY) / 2;
-
             const canvasRect = canvas.getBoundingClientRect();
             const pdfPointScreenX = pinchState.screenCenterX - canvasRect.left;
             const pdfPointScreenY = pinchState.screenCenterY - canvasRect.top;
-
             pinchState.pdfPointX = pdfPointScreenX / scale;
             pinchState.pdfPointY = pdfPointScreenY / scale;
-
         } else if (e.touches.length === 1 && !pinchState.active) { 
             const cssCanvasWidth = parseFloat(canvas.style.width);
             const cssCanvasHeight = parseFloat(canvas.style.height);
             if ((!isZoomed && (cssCanvasWidth <= pdfViewer.clientWidth && cssCanvasHeight <= pdfViewer.clientHeight)) || e.target !== canvas) {
-                 isDraggingPdf = false; return;
+                isDraggingPdf = false; return;
             }
             isDraggingPdf = true;
             const touch = e.touches[0];
@@ -706,16 +666,13 @@
 
     function handlePdfMove(clientX, clientY) {
         if (!isDraggingPdf) return;
-
         let newTranslateX = clientX - startPos.x;
         let newTranslateY = clientY - startPos.y;
-
         const viewerWidth = pdfViewer.clientWidth;
         const viewerHeight = pdfViewer.clientHeight;
         const cssCanvasWidth = parseFloat(canvas.style.width);
         const cssCanvasHeight = parseFloat(canvas.style.height);
         const overpanMargin = 30; 
-
         if (cssCanvasWidth > viewerWidth) {
             const minX = viewerWidth - cssCanvasWidth - overpanMargin; 
             const maxX = overpanMargin; 
@@ -723,7 +680,6 @@
         } else {
             newTranslateX = 0; 
         }
-
         if (cssCanvasHeight > viewerHeight) {
             const minY = viewerHeight - cssCanvasHeight - overpanMargin; 
             const maxY = overpanMargin; 
@@ -731,7 +687,6 @@
         } else {
             newTranslateY = 0; 
         }
-
         translatePos.x = newTranslateX;
         translatePos.y = newTranslateY;
         updateCanvasTransform();
@@ -739,21 +694,17 @@
 
     function handlePinchMove(touch1, touch2) {
         if (!pinchState.active || pinchState.initialDistance === 0) return;
-
         const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
         let newScale = pinchState.lastScale * (currentDistance / pinchState.initialDistance);
         newScale = Math.min(3.0, Math.max(0.5, parseFloat(newScale.toFixed(2)))); 
-
         if (Math.abs(newScale - scale) < 0.01 && newScale !== 0.5 && newScale !== 3.0) return; 
-
         const oldScale = scale;
         scale = newScale;
-
         const viewerRect = pdfViewer.getBoundingClientRect(); 
         let baseCanvasX = 0;
         let baseCanvasY = 0;
         if (pdfDoc) {
-            pdfDoc.getPage(currentPage).then(page => { // Es asíncrono, idealmente se debería manejar mejor
+            pdfDoc.getPage(currentPage).then(page => { 
                 const viewportCss = page.getViewport({scale: scale});
                 if (viewportCss.width < viewerRect.width) {
                     baseCanvasX = (viewerRect.width - viewportCss.width) / 2;
@@ -761,10 +712,8 @@
                 if (viewportCss.height < viewerRect.height) {
                     baseCanvasY = (viewerRect.height - viewportCss.height) / 2;
                 }
-
                 translatePos.x = (pinchState.screenCenterX - viewerRect.left - baseCanvasX) - (pinchState.pdfPointX * scale);
                 translatePos.y = (pinchState.screenCenterY - viewerRect.top - baseCanvasY) - (pinchState.pdfPointY * scale);
-
                 document.getElementById('zoom-slider').value = scale.toFixed(1);
                 renderPage(currentPage); 
             });
@@ -789,19 +738,14 @@
         if (!pdfDoc) return;
         const oldScale = scale;
         scale = parseFloat(this.value);
-
         const viewerRect = pdfViewer.getBoundingClientRect();
         const canvasRect = canvas.getBoundingClientRect(); 
-
         const screenCenterX = viewerRect.left + viewerRect.width / 2;
         const screenCenterY = viewerRect.top + viewerRect.height / 2;
-
         const pdfPointX = (screenCenterX - canvasRect.left) / oldScale;
         const pdfPointY = (screenCenterY - canvasRect.top) / oldScale;
-
         const page = await pdfDoc.getPage(currentPage);
         const newViewportCss = page.getViewport({scale: scale}); 
-
         let expectedCanvasOffsetLeft = 0;
         if (newViewportCss.width < viewerRect.width) {
             expectedCanvasOffsetLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -812,7 +756,6 @@
         }
         translatePos.x = (screenCenterX - viewerRect.left - expectedCanvasOffsetLeft) - (pdfPointX * scale);
         translatePos.y = (screenCenterY - viewerRect.top - expectedCanvasOffsetTop) - (pdfPointY * scale);
-
         renderPage(currentPage);
         pinchState.lastScale = scale; 
     });
@@ -820,30 +763,22 @@
     pdfViewer.addEventListener('wheel', async function (e) {
         if (!pdfDoc) return;
         e.preventDefault(); 
-
         const oldScale = scale;
         const delta = e.deltaY > 0 ? -0.1 : 0.1; 
         let newScale = parseFloat((scale + delta).toFixed(2));
         newScale = Math.min(3.0, Math.max(0.5, newScale)); 
-
         if (Math.abs(newScale - oldScale) < 0.01 && newScale !==0.5 && newScale !== 3.0) return; 
-
         const viewerRect = pdfViewer.getBoundingClientRect();
         const mouseXViewer = e.clientX - viewerRect.left; 
         const mouseYViewer = e.clientY - viewerRect.top; 
-
         const canvasRect = canvas.getBoundingClientRect(); 
         const mouseXOnCanvas = e.clientX - canvasRect.left; 
         const mouseYOnCanvas = e.clientY - canvasRect.top; 
-
         const pdfPointX = mouseXOnCanvas / oldScale;
         const pdfPointY = mouseYOnCanvas / oldScale;
-
         scale = newScale; 
-
         const page = await pdfDoc.getPage(currentPage);
         const newViewportCss = page.getViewport({ scale: scale }); 
-
         let expectedCanvasLeft = 0;
         if (newViewportCss.width < viewerRect.width) {
             expectedCanvasLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -852,10 +787,8 @@
         if (newViewportCss.height < viewerRect.height) {
             expectedCanvasTop = (viewerRect.height - newViewportCss.height) / 2;
         }
-
         translatePos.x = (mouseXViewer - expectedCanvasLeft) - (pdfPointX * scale);
         translatePos.y = (mouseYViewer - expectedCanvasTop) - (pdfPointY * scale);
-
         document.getElementById('zoom-slider').value = scale.toFixed(1);
         renderPage(currentPage);
     }, { passive: false }); 
@@ -865,25 +798,18 @@
             showMessage("Carga un PDF primero.");
             return null;
         }
-
         const { jsPDF } = window.jspdf; 
         const newPdfDocGen = new jsPDF(); 
-
         while (newPdfDocGen.getNumberOfPages() > 0) { newPdfDocGen.deletePage(1); }
-
-
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdfDoc.getPage(i);
             const downloadScale = 2.0; 
             const viewport = page.getViewport({ scale: downloadScale });
-
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = viewport.width;
             tempCanvas.height = viewport.height;
-
             await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
-
             embeddedSignatures.filter(sig => sig.page === i).forEach(sigInfo => {
                 const img = new Image();
                 img.src = sigInfo.dataURL; 
@@ -893,7 +819,6 @@
                 const height = sigInfo.height * downloadScale;
                 tempCtx.drawImage(img, x, y, width, height);
             });
-
             const imgData = tempCanvas.toDataURL('image/jpeg', 0.9); 
             newPdfDocGen.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'l' : 'p');
             newPdfDocGen.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
@@ -923,52 +848,64 @@
             showMessage("Carga un PDF primero para compartir.");
             return;
         }
-        // Usar supabaseClient (la variable donde guardamos el cliente inicializado)
-        if (!supabaseClient) { 
-            showMessage("Fallo en Supabase: La inicialización de Supabase no tuvo éxito (revisa mensajes anteriores para el detalle).\n\nLa función de compartir no está disponible.\n\nVerifica la consola y tu configuración de Supabase.");
+        if (!supabaseClient) {
+            showMessage("Fallo en Supabase: La inicialización de Supabase no tuvo éxito.\n\nLa función de compartir no está disponible.\n\nVerifica la consola y tu configuración de Supabase.");
             return;
         }
-
-        showMessage("Preparando PDF para compartir...");
-        const pdfBlob = await getProcessedPdfBlob();
-        if (!pdfBlob) {
-            if(pdfDoc) showMessage("No se pudo generar el PDF para compartir.");
+        if (!originalPdfFileBlob) {
+            showMessage("El archivo PDF original no está disponible. Por favor, recarga el PDF e inténtalo de nuevo.");
             return;
         }
-
-        const fileName = `shared/${Date.now()}_${originalFileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-
+        if (embeddedSignatures.length === 0) {
+            showMessage("No se han añadido cuadros marcadores (firmas) para compartir. \n\nAñade al menos un área de firma utilizando 'Añadir Firma' y dibuja en ella antes de compartir.");
+            return;
+        }
+        showMessage("Preparando documento para compartir...");
+        const documentId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        const originalPdfStoragePath = `documents/${documentId}/${originalFileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         try {
-            // Usar supabaseClient para las operaciones de storage
-            const { data, error } = await supabaseClient.storage 
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage
                 .from('pdfs') 
-                .upload(fileName, pdfBlob, {
-                    cacheControl: '3600', 
+                .upload(originalPdfStoragePath, originalPdfFileBlob, {
+                    cacheControl: '3600',
                     upsert: false 
                 });
-
-            if (error) {
-                console.error("Error al subir a Supabase Storage:", error);
-                showMessage(`Error al subir el PDF: ${error.message}\n\nAsegúrate de que el bucket 'pdfs' existe y tiene las políticas de acceso correctas.`);
-                return;
+            if (uploadError) {
+                console.error("Error al subir PDF original a Supabase:", uploadError);
+                throw new Error(`Error al subir PDF original: ${uploadError.message}`);
             }
-
-            if (data) {
-                // Usar supabaseClient para obtener la URL
-                const { data: urlData } = supabaseClient.storage 
-                    .from('pdfs')
-                    .getPublicUrl(fileName);
-
-                if (urlData && urlData.publicUrl) {
-                    showMessage("PDF subido. Aquí está tu URL para compartir:", true, urlData.publicUrl);
-                } else {
-                    console.warn("PDF subido, pero no se pudo obtener la URL pública. Path del archivo:", data.path);
-                    showMessage(`PDF subido a: ${data.path}\nPero no se pudo obtener la URL pública directamente. Verifica las políticas de tu bucket.`);
-                }
+            console.log("PDF original subido:", uploadData);
+            const markersInfo = embeddedSignatures.map((sig, index) => ({
+                doc_id: documentId,
+                marker_id: `marker_${index + 1}_${Date.now()}`,
+                page: sig.page,
+                x_coord: sig.x, 
+                y_coord: sig.y, 
+                width_val: sig.width, 
+                height_val: sig.height, 
+                status: 'pending_signature'
+            }));
+            const { error: markersError } = await supabaseClient
+                .from('signature_markers') 
+                .insert(markersInfo);
+            if (markersError) {
+                console.error("Error al guardar marcadores en Supabase:", markersError);
+                throw new Error(`Error al guardar información de marcadores: ${markersError.message}`);
             }
-        } catch (uploadError) { 
-            console.error("Excepción al interactuar con Supabase Storage:", uploadError);
-            showMessage(`Excepción al subir el PDF: ${uploadError.message}`);
+            console.log("Información de marcadores guardada en Supabase.");
+            const shareUrl = `${window.location.origin}${window.location.pathname}?doc_id=${documentId}&mode=sign`;
+            showMessage(`Documento listo para Usuario B.\nComparte esta URL (y asegúrate que el Usuario B sepa el ID del documento si la URL no lo pasa directamente):\nID Documento: ${documentId}`, true, shareUrl);
+        } catch (error) {
+            console.error("Excepción detallada en sharePDF:", error);
+            let userMessage = `Error al compartir: ${error.message || "Error desconocido."}\n\n`;
+            if (error.message && error.message.includes("signature_markers")) {
+                 userMessage += "Asegúrate de que la tabla 'signature_markers' existe en tu base de datos Supabase y que tiene las políticas de RLS correctas para inserción.\n";
+                 userMessage += "Columnas sugeridas: id (PK), doc_id, marker_id, page, x_coord, y_coord, width_val, height_val, status, signed_signature_data_url, signed_at.\n";
+            } else if (error.message && error.message.includes("bucket")) {
+                userMessage += "Verifica que el bucket 'pdfs' existe y tiene las políticas de acceso correctas para subida y lectura pública si es necesario.\n";
+            }
+            userMessage += "\nRevisa la consola del navegador para más detalles técnicos.";
+            showMessage(userMessage);
         }
     }
 
@@ -977,27 +914,66 @@
         showMessage("Por favor, carga un documento PDF primero.");
         return;
       }
-      if (signatureBoxEl) { signatureBoxEl.remove(); }
+      if (signatureBoxEl) { 
+        signatureBoxEl.remove(); 
+      }
+      activeSignatureBoxInfo = null; 
 
       signatureBoxEl = document.createElement('div');
       signatureBoxEl.className = 'signature-box';
       signatureBoxEl.style.width = '150px'; 
       signatureBoxEl.style.height = '75px';
-
       const viewerRect = pdfViewer.getBoundingClientRect();
       signatureBoxEl.style.left = `${(viewerRect.width - 150) / 2}px`;
       signatureBoxEl.style.top = `${(viewerRect.height - 75) / 2}px`;
-
       pdfViewer.appendChild(signatureBoxEl);
       makeSignatureBoxEditable(signatureBoxEl); 
     }
+    
+    function repositionActiveSignatureBox() {
+        if (!activeSignatureBoxInfo || !activeSignatureBoxInfo.element || !pdfViewer || !canvas || !pdfDoc) {
+            if (activeSignatureBoxInfo && activeSignatureBoxInfo.element) {
+                 // activeSignatureBoxInfo.element.style.display = 'none'; 
+            }
+            return;
+        }
+        const sig = activeSignatureBoxInfo;
+        const boxEl = sig.element;
+        if (sig.page === currentPage) {
+            const canvasRect = canvas.getBoundingClientRect(); 
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            const displayX = (sig.x * scale) + (canvasRect.left - viewerRect.left);
+            const displayY = (sig.y * scale) + (canvasRect.top - viewerRect.top);
+            const displayWidth = sig.width * scale;
+            const displayHeight = sig.height * scale;
+            boxEl.style.left = `${displayX}px`;
+            boxEl.style.top = `${displayY}px`;
+            boxEl.style.width = `${displayWidth}px`;
+            boxEl.style.height = `${displayHeight}px`;
+            boxEl.style.display = 'block';
+        } else {
+            boxEl.style.display = 'none';
+        }
+    }
 
     function confirmSignatureBoxPlacement(boxEl) {
-        if (!boxEl) return;
+        if (!boxEl || !pdfDoc) return; 
         const handles = boxEl.querySelectorAll('.resize-handle');
         handles.forEach(h => h.remove());
         boxEl.classList.add('position-confirmed'); 
-
+        const canvasRect = canvas.getBoundingClientRect();
+        const boxRect = boxEl.getBoundingClientRect();
+        const boxRelToCanvasX = boxRect.left - canvasRect.left;
+        const boxRelToCanvasY = boxRect.top - canvasRect.top;
+        activeSignatureBoxInfo = {
+            element: boxEl,
+            page: currentPage,
+            x: boxRelToCanvasX / scale, 
+            y: boxRelToCanvasY / scale, 
+            width: boxRect.width / scale,   
+            height: boxRect.height / scale  
+        };
+        repositionActiveSignatureBox(); 
         let controls = boxEl.querySelector('.signature-box-controls');
         if (!controls) { 
             controls = document.createElement('div');
@@ -1005,25 +981,26 @@
             boxEl.appendChild(controls);
         }
         controls.innerHTML = ''; 
-
         const drawBtn = document.createElement('button');
         drawBtn.className = 'signature-box-btn draw';
         drawBtn.innerHTML = '✍️'; 
         drawBtn.title = 'Dibujar Firma';
         drawBtn.onclick = (e) => { e.stopPropagation(); openSignatureModal(); };
-
         const editPosBtn = document.createElement('button');
         editPosBtn.className = 'signature-box-btn edit';
         editPosBtn.innerHTML = '✏️'; 
         editPosBtn.title = 'Editar Posición';
         editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); };
-
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'signature-box-btn cancel';
         cancelBtn.innerHTML = '❌'; 
         cancelBtn.title = 'Cancelar Firma';
-        cancelBtn.onclick = (e) => { e.stopPropagation(); boxEl.remove(); signatureBoxEl = null; };
-
+        cancelBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            boxEl.remove(); 
+            signatureBoxEl = null; 
+            activeSignatureBoxInfo = null; 
+        };
         controls.appendChild(drawBtn);
         controls.appendChild(editPosBtn);
         controls.appendChild(cancelBtn);
@@ -1031,10 +1008,11 @@
 
     function makeSignatureBoxEditable(boxEl) {
         if (!boxEl) return;
+        activeSignatureBoxInfo = null; 
         boxEl.classList.remove('position-confirmed'); 
+        boxEl.style.cursor = 'move'; // Asegurar que el cursor sea de movimiento
         boxEl.querySelectorAll('.resize-handle').forEach(h => h.remove()); 
         addResizeHandlesToSigBox(boxEl); 
-
         let controls = boxEl.querySelector('.signature-box-controls');
         if (!controls) {
             controls = document.createElement('div');
@@ -1042,22 +1020,23 @@
             boxEl.appendChild(controls);
         }
         controls.innerHTML = ''; 
-
         const confirmPlacementBtn = document.createElement('button');
         confirmPlacementBtn.className = 'signature-box-btn confirm';
         confirmPlacementBtn.innerHTML = '✔️'; 
         confirmPlacementBtn.title = 'Confirmar Posición';
         confirmPlacementBtn.onclick = (e) => { e.stopPropagation(); confirmSignatureBoxPlacement(boxEl); };
-
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'signature-box-btn cancel';
         cancelBtn.innerHTML = '🗑️'; 
         cancelBtn.title = 'Eliminar este cuadro';
-        cancelBtn.onclick = (e) => { e.stopPropagation(); boxEl.remove(); signatureBoxEl = null; };
-
+        cancelBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            boxEl.remove(); 
+            signatureBoxEl = null; 
+            activeSignatureBoxInfo = null; 
+        };
         controls.appendChild(confirmPlacementBtn);
         controls.appendChild(cancelBtn);
-
         setupSigBoxDragEvents(boxEl); 
     }
 
@@ -1093,7 +1072,6 @@
         const handle = document.createElement('div');
         handle.className = `resize-handle ${pos}`;
         box.appendChild(handle);
-
         handle.addEventListener('mousedown', (e) => {
           e.stopImmediatePropagation(); 
           initSigBoxResize(e.clientX, e.clientY, pos, box);
@@ -1115,11 +1093,9 @@
         startBoxPosSigBox = { x: box.offsetLeft, y: box.offsetTop };
         startBoxSizeSigBox = { width: box.offsetWidth, height: box.offsetHeight };
         startPointerPosSigBox = { x: clientX, y: clientY };
-
         isDraggingPdf = false;
         isDraggingSigBox = false;
         pinchState.active = false;
-
         window.addEventListener('mousemove', _onSigBoxResizeMove);
         window.addEventListener('touchmove', _onSigBoxResizeMove, { passive: false });
         window.addEventListener('mouseup', _onSigBoxResizeEnd);
@@ -1128,19 +1104,15 @@
 
     function handleSigBoxResizeMove(clientX, clientY) {
         if (!isResizingSigBox || !resizeHandleTypeSigBox || !signatureBoxEl) return;
-
         const deltaX = clientX - startPointerPosSigBox.x;
         const deltaY = clientY - startPointerPosSigBox.y;
-
         let newWidth = startBoxSizeSigBox.width;
         let newHeight = startBoxSizeSigBox.height;
         let newLeft = startBoxPosSigBox.x;
         let newTop = startBoxPosSigBox.y;
-
         const minWidth = 50; 
         const minHeight = 30; 
         const viewerRect = pdfViewer.getBoundingClientRect();
-
         if (resizeHandleTypeSigBox.includes('w')) { 
             newWidth = Math.max(minWidth, startBoxSizeSigBox.width - deltaX);
             newLeft = startBoxPosSigBox.x + (startBoxSizeSigBox.width - newWidth);
@@ -1155,16 +1127,12 @@
         if (resizeHandleTypeSigBox.includes('s')) { 
             newHeight = Math.max(minHeight, startBoxSizeSigBox.height + deltaY);
         }
-
         if (newLeft < 0) { newWidth += newLeft; newLeft = 0; } 
         if (newTop < 0) { newHeight += newTop; newTop = 0; } 
-
         if (newLeft + newWidth > viewerRect.width) { newWidth = viewerRect.width - newLeft; }
         if (newTop + newHeight > viewerRect.height) { newHeight = viewerRect.height - newTop; }
-
         newWidth = Math.max(minWidth, newWidth);
         newHeight = Math.max(minHeight, newHeight);
-
         signatureBoxEl.style.width = `${newWidth}px`;
         signatureBoxEl.style.height = `${newHeight}px`;
         signatureBoxEl.style.left = `${newLeft}px`;
@@ -1178,17 +1146,14 @@
             const viewerRect = pdfViewer.getBoundingClientRect();
             signatureBoxDragOffset.x = clientX - viewerRect.left - box.offsetLeft;
             signatureBoxDragOffset.y = clientY - viewerRect.top - box.offsetTop;
-
             isDraggingPdf = false; 
             isResizingSigBox = false; 
             pinchState.active = false; 
-
             window.addEventListener('mousemove', _onSigBoxDragMove);
             window.addEventListener('touchmove', _onSigBoxDragMove, { passive: false });
             window.addEventListener('mouseup', _onSigBoxDragEnd);
             window.addEventListener('touchend', _onSigBoxDragEnd);
         }
-
         box.addEventListener('mousedown', (e) => {
             if (e.target === box && !box.classList.contains('position-confirmed')) {
                 e.stopImmediatePropagation(); 
@@ -1209,59 +1174,47 @@
         const viewerRect = pdfViewer.getBoundingClientRect();
         let newLeft = clientX - viewerRect.left - signatureBoxDragOffset.x;
         let newTop = clientY - viewerRect.top - signatureBoxDragOffset.y;
-
         newLeft = Math.max(0, Math.min(newLeft, viewerRect.width - signatureBoxEl.offsetWidth));
         newTop = Math.max(0, Math.min(newTop, viewerRect.height - signatureBoxEl.offsetHeight));
-
         signatureBoxEl.style.left = `${newLeft}px`;
         signatureBoxEl.style.top = `${newTop}px`;
     }
 
     function openSignatureModal() {
       if (!signatureBoxEl) return; 
-
       signatureModalEl = document.createElement('div');
       signatureModalEl.className = 'signature-modal';
-
       const container = document.createElement('div');
       container.className = 'signature-container';
-
       const canvasContainer = document.createElement('div');
       canvasContainer.className = 'signature-canvas-container';
       signaturePadCanvasEl = document.createElement('canvas');
       signaturePadCanvasEl.id = 'signature-canvas';
       canvasContainer.appendChild(signaturePadCanvasEl);
       container.appendChild(canvasContainer);
-
       signaturePadCtxEl = signaturePadCanvasEl.getContext('2d');
-
       const controls = document.createElement('div');
       controls.className = 'signature-controls';
-
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'signature-control-btn cancel';
       cancelBtn.textContent = '❌ Cancelar';
       cancelBtn.onclick = () => { signatureModalEl.remove(); signatureModalEl = null; };
-
       const clearBtn = document.createElement('button');
       clearBtn.className = 'signature-control-btn clear';
       clearBtn.textContent = '↩️ Limpiar';
       clearBtn.onclick = () => {
         signaturePadCtxEl.clearRect(0, 0, signaturePadCanvasEl.width / (window.devicePixelRatio||1) , signaturePadCanvasEl.height / (window.devicePixelRatio||1) );
       };
-
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'signature-control-btn confirm';
       confirmBtn.textContent = '✔️ Firmar';
       confirmBtn.onclick = embedSignature; 
-
       controls.appendChild(cancelBtn);
       controls.appendChild(clearBtn);
       controls.appendChild(confirmBtn);
       container.appendChild(controls);
       signatureModalEl.appendChild(container);
       document.body.appendChild(signatureModalEl);
-
       requestAnimationFrame(() => {
         const rect = canvasContainer.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -1270,13 +1223,11 @@
         signaturePadCanvasEl.style.width = `${rect.width}px`;
         signaturePadCanvasEl.style.height = `${rect.height}px`;
         signaturePadCtxEl.scale(dpr, dpr); 
-
         signaturePadCtxEl.lineWidth = 1.5; 
         signaturePadCtxEl.lineCap = 'round'; 
         signaturePadCtxEl.lineJoin = 'round'; 
         signaturePadCtxEl.strokeStyle = '#000000'; 
       });
-
       setupSignaturePadDrawingEventsEl(); 
     }
 
@@ -1296,7 +1247,6 @@
           y: (clientY - rect.top)
         };
       }
-
       function startPadDraw(e) {
         e.preventDefault();
         isDrawingOnPadEl = true;
@@ -1304,7 +1254,6 @@
         signaturePadCtxEl.beginPath(); 
         signaturePadCtxEl.moveTo(lastDrawPadPosEl.x, lastDrawPadPosEl.y);
       }
-
       function drawOnPad(e) {
         if (!isDrawingOnPadEl) return;
         e.preventDefault();
@@ -1313,18 +1262,15 @@
         signaturePadCtxEl.stroke(); 
         lastDrawPadPosEl = currentPos;
       }
-
       function stopPadDraw() {
           if(isDrawingOnPadEl) {
             isDrawingOnPadEl = false;
           }
       }
-
       signaturePadCanvasEl.addEventListener('mousedown', startPadDraw);
       signaturePadCanvasEl.addEventListener('mousemove', drawOnPad);
       signaturePadCanvasEl.addEventListener('mouseup', stopPadDraw);
       signaturePadCanvasEl.addEventListener('mouseout', stopPadDraw); 
-
       signaturePadCanvasEl.addEventListener('touchstart', startPadDraw, { passive: false });
       signaturePadCanvasEl.addEventListener('touchmove', drawOnPad, { passive: false });
       signaturePadCanvasEl.addEventListener('touchend', stopPadDraw);
@@ -1335,57 +1281,51 @@
         tempCanvasTest.width = signaturePadCanvasEl.width; 
         tempCanvasTest.height = signaturePadCanvasEl.height;
         const blankDataURL = tempCanvasTest.toDataURL();
-
         if (!signatureBoxEl || !signaturePadCanvasEl || signaturePadCanvasEl.toDataURL() === blankDataURL) {
             showMessage("Por favor, dibuja una firma primero.");
             return;
         }
-
+        if (!activeSignatureBoxInfo || activeSignatureBoxInfo.element !== signatureBoxEl) {
+            console.warn("activeSignatureBoxInfo no está sincronizado o disponible en embedSignature. Recalculando...");
+            const canvasRect = canvas.getBoundingClientRect();
+            const boxRect = signatureBoxEl.getBoundingClientRect();
+            const boxRelToCanvasX = boxRect.left - canvasRect.left;
+            const boxRelToCanvasY = boxRect.top - canvasRect.top;
+            activeSignatureBoxInfo = { 
+                element: signatureBoxEl, page: currentPage,
+                x: boxRelToCanvasX / scale, y: boxRelToCanvasY / scale,
+                width: boxRect.width / scale, height: boxRect.height / scale
+            };
+        }
         const dataURL = signaturePadCanvasEl.toDataURL('image/png'); 
         const signatureImgElement = document.createElement('img');
         signatureImgElement.className = 'embedded-signature'; 
         signatureImgElement.src = dataURL;
-
-        const boxCssLeft = signatureBoxEl.offsetLeft;
-        const boxCssTop = signatureBoxEl.offsetTop;
-
-        const canvasCssOffsetLeft = canvas.offsetLeft + translatePos.x;
-        const canvasCssOffsetTop = canvas.offsetTop + translatePos.y;
-
-        const sigBoxRelativeToDisplayedCanvasX = boxCssLeft - canvasCssOffsetLeft;
-        const sigBoxRelativeToDisplayedCanvasY = boxCssTop - canvasCssOffsetTop;
-
-        const sigPageX = sigBoxRelativeToDisplayedCanvasX / scale;
-        const sigPageY = sigBoxRelativeToDisplayedCanvasY / scale;
-        const sigPageWidth = signatureBoxEl.offsetWidth / scale;
-        const sigPageHeight = signatureBoxEl.offsetHeight / scale;
-
+        const sigPageX = activeSignatureBoxInfo.x;
+        const sigPageY = activeSignatureBoxInfo.y;
+        const sigPageWidth = activeSignatureBoxInfo.width;
+        const sigPageHeight = activeSignatureBoxInfo.height;
         const signatureInfo = {
             element: signatureImgElement, 
-            page: currentPage,         
-            x: sigPageX, y: sigPageY,   
+            page: activeSignatureBoxInfo.page,     
+            x: sigPageX, y: sigPageY, 
             width: sigPageWidth, height: sigPageHeight, 
-            dataURL: dataURL          
+            dataURL: dataURL       
         };
         embeddedSignatures.push(signatureInfo); 
-
         pdfViewer.appendChild(signatureImgElement); 
-
         signatureBoxEl.remove(); signatureBoxEl = null;
+        activeSignatureBoxInfo = null; 
         if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
-
         repositionSignatures(); 
     }
 
     function repositionSignatures() {
         if (!pdfViewer || !canvas) return;
-
         const viewerRect = pdfViewer.getBoundingClientRect();
         const pdfCanvasRect = canvas.getBoundingClientRect(); 
-
         const pdfCanvasScreenLeftInViewer = pdfCanvasRect.left - viewerRect.left;
         const pdfCanvasScreenTopInViewer = pdfCanvasRect.top - viewerRect.top;
-
         embeddedSignatures.forEach(sig => {
             if (sig.element) {
                 if (sig.page === currentPage) { 
@@ -1393,7 +1333,6 @@
                     const displayY = (sig.y * scale) + pdfCanvasScreenTopInViewer;
                     const displayWidth = sig.width * scale;
                     const displayHeight = sig.height * scale;
-
                     sig.element.style.left = `${displayX}px`;
                     sig.element.style.top = `${displayY}px`;
                     sig.element.style.width = `${displayWidth}px`;
@@ -1405,14 +1344,20 @@
             }
         });
     }
-
+    
     function adjustViewerHeightAndRender() {
         const headerElement = document.querySelector('header');
         if (headerElement && pdfViewer) {
             const headerHeight = headerElement.offsetHeight;
             pdfViewer.style.height = `calc(100vh - ${headerHeight}px)`;
         }
-        if (pdfDoc) { renderPage(currentPage); }
+        if (pdfDoc) { 
+            renderPage(currentPage); 
+        } else {
+            if (activeSignatureBoxInfo && activeSignatureBoxInfo.element) {
+                activeSignatureBoxInfo.element.style.display = 'none';
+            }
+        }
     }
 
     window.addEventListener('mousemove', (e) => {
@@ -1445,11 +1390,17 @@
         if (isDraggingPdf) isDraggingPdf = false;
         if (pinchState.active && e.touches.length < 2) pinchState.active = false; 
     });
-
+    
     window.addEventListener('load', () => {
       adjustViewerHeightAndRender();
-      // Intenta inicializar Supabase aquí también o asegúrate de que showMessage esté disponible globalmente si se llama antes.
-      // La inicialización de Supabase ya está arriba, así que los errores se mostrarán si ocurren al cargar el script.
+      const urlParams = new URLSearchParams(window.location.search);
+      const docIdFromUrl = urlParams.get('doc_id');
+      const mode = urlParams.get('mode');
+      if (docIdFromUrl && mode === 'sign') {
+          console.log(`Modo Firmante: Cargar documento con ID: ${docIdFromUrl}`);
+          showMessage(`Modo Firmante detectado.\nID del Documento: ${docIdFromUrl}\n\n(La funcionalidad del Usuario B para cargar y firmar aún no está implementada en esta versión.)`);
+          document.getElementById('file-input').style.display = 'none';
+      }
     });
     window.addEventListener('resize', adjustViewerHeightAndRender);
 
