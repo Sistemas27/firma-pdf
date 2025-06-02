@@ -478,7 +478,7 @@
             };
         }
     }
-    
+   
     try {
         if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY') {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
@@ -518,7 +518,7 @@
     let isZoomed = false;
 
     let embeddedSignatures = [];
-    let signatureBoxEl = null;
+    let signatureBoxEl = null; // Variable global para el cuadro de firma
     let activeSignatureBoxInfo = null; 
     let isDraggingSigBox = false;
     let isResizingSigBox = false;
@@ -552,7 +552,7 @@
       if (file && file.type === 'application/pdf') {
         originalFileName = file.name;
         originalPdfFileBlob = file; 
-        
+       
         sharedDocIdForUserA = null;
         const checkBtn = document.getElementById('check-signatures-btn');
         if (checkBtn) checkBtn.style.display = 'none';
@@ -575,14 +575,15 @@
             document.getElementById('zoom-slider').value = scale;
             document.getElementById('total-pages').textContent = totalPages;
             document.getElementById('current-page').textContent = currentPage;
-            
+           
             embeddedSignatures = [];
             document.querySelectorAll('.embedded-signature').forEach(el => el.remove());
             if (signatureBoxEl) {
+                console.log("[file-input] Removing existing signatureBoxEl due to new file load.");
                 signatureBoxEl.remove();
-                signatureBoxEl = null;
-                activeSignatureBoxInfo = null; 
+                signatureBoxEl = null; // Asegurarse de que la referencia global se anule
             }
+            activeSignatureBoxInfo = null; 
             pageVisitCounts = {};
             totalPageViewsSession = 0;
             updatePageUsageCounters(); 
@@ -613,23 +614,23 @@
     async function renderPage(num) { 
         if (!pdfDoc || rendering) return;
         rendering = true;
-        
+       
         const userBArea = document.getElementById('user-b-sig-area');
-        if(userBArea) userBArea.style.display = 'none'; // Hide while rendering
+        if(userBArea) userBArea.style.display = 'none'; 
 
         updatePageUsageCounters(); 
-        
+       
         try {
             const page = await pdfDoc.getPage(num);
             const dpr = window.devicePixelRatio || 1; 
             const viewportForRender = page.getViewport({ scale: scale * dpr }); 
             canvas.width = viewportForRender.width;
             canvas.height = viewportForRender.height;
-            
+           
             const viewportCss = page.getViewport({ scale: scale });
             canvas.style.width = `${viewportCss.width}px`;
             canvas.style.height = `${viewportCss.height}px`;
-            
+           
             const viewerWidth = pdfViewer.clientWidth;
             const viewerHeight = pdfViewer.clientHeight;
             const cssCanvasWidth = viewportCss.width;
@@ -638,14 +639,14 @@
             canvas.style.left = (cssCanvasWidth < viewerWidth) ? `${(viewerWidth - cssCanvasWidth) / 2}px` : '0px';
             canvas.style.top = (cssCanvasHeight < viewerHeight) ? `${(viewerHeight - cssCanvasHeight) / 2}px` : '0px';
             canvas.style.position = 'absolute'; 
-            
+           
             const renderContext = { canvasContext: context, viewport: viewportForRender };
             await page.render(renderContext).promise;
 
             rendering = false;
             document.getElementById('current-page').textContent = num;
             isZoomed = scale !== 1 || cssCanvasWidth > viewerWidth || cssCanvasHeight > viewerHeight;
-            updateCanvasTransform(); // This will call displayMarkerForUserB if needed
+            updateCanvasTransform(); 
 
         } catch (err) {
             rendering = false; 
@@ -662,7 +663,7 @@
             displayMarkerForUserB(markerDataForUserB);
         }
     }
-    
+   
     canvas.addEventListener('mousedown', (e) => {
         if (isDraggingSigBox || isResizingSigBox || pinchState.active) return; 
         const cssCanvasWidth = parseFloat(canvas.style.width);
@@ -695,11 +696,11 @@
             const viewerRect = pdfViewer.getBoundingClientRect();
             pinchState.screenCenterX = (touch1.clientX + touch2.clientX) / 2;
             pinchState.screenCenterY = (touch1.clientY + touch2.clientY) / 2;
-            
+           
             const canvasRect = canvas.getBoundingClientRect();
             const pdfPointScreenX = pinchState.screenCenterX - canvasRect.left;
             const pdfPointScreenY = pinchState.screenCenterY - canvasRect.top;
-            
+           
             pinchState.pdfPointX = pdfPointScreenX / scale; 
             pinchState.pdfPointY = pdfPointScreenY / scale;
 
@@ -724,7 +725,7 @@
         const cssCanvasWidth = parseFloat(canvas.style.width);
         const cssCanvasHeight = parseFloat(canvas.style.height);
         const overpanMargin = 30; 
-        
+       
         if (cssCanvasWidth > viewerWidth) {
             const minX = viewerWidth - cssCanvasWidth - overpanMargin; 
             const maxX = overpanMargin; 
@@ -750,16 +751,16 @@
         const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
         let newScale = pinchState.lastScale * (currentDistance / pinchState.initialDistance);
         newScale = Math.min(3.0, Math.max(0.5, parseFloat(newScale.toFixed(2)))); 
-        
+       
         if (Math.abs(newScale - scale) < 0.01 && newScale !== 0.5 && newScale !== 3.0) return; 
-        
+       
         const oldScale = scale;
         scale = newScale;
-        
+       
         const viewerRect = pdfViewer.getBoundingClientRect(); 
         let baseCanvasX = 0;
         let baseCanvasY = 0;
-        
+       
         try {
             const page = await pdfDoc.getPage(currentPage);
             const viewportCss = page.getViewport({scale: scale});
@@ -769,10 +770,10 @@
             if (viewportCss.height < viewerRect.height) {
                 baseCanvasY = (viewerRect.height - viewportCss.height) / 2;
             }
-            
+           
             translatePos.x = (pinchState.screenCenterX - viewerRect.left - baseCanvasX) - (pinchState.pdfPointX * scale);
             translatePos.y = (pinchState.screenCenterY - viewerRect.top - baseCanvasY) - (pinchState.pdfPointY * scale);
-            
+           
             document.getElementById('zoom-slider').value = scale.toFixed(1);
             await renderPage(currentPage); 
         } catch(err) {
@@ -799,19 +800,19 @@
         if (!pdfDoc) return;
         const oldScale = scale;
         scale = parseFloat(this.value);
-        
+       
         const viewerRect = pdfViewer.getBoundingClientRect();
         const canvasRect = canvas.getBoundingClientRect(); 
-        
+       
         const screenCenterX = viewerRect.left + viewerRect.width / 2;
         const screenCenterY = viewerRect.top + viewerRect.height / 2;
-        
+       
         const pdfPointX = (screenCenterX - canvasRect.left) / oldScale;
         const pdfPointY = (screenCenterY - canvasRect.top) / oldScale;
-        
+       
         const page = await pdfDoc.getPage(currentPage);
         const newViewportCss = page.getViewport({scale: scale}); 
-        
+       
         let expectedCanvasOffsetLeft = 0;
         if (newViewportCss.width < viewerRect.width) {
             expectedCanvasOffsetLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -820,10 +821,10 @@
         if (newViewportCss.height < viewerRect.height) {
             expectedCanvasOffsetTop = (viewerRect.height - newViewportCss.height) / 2;
         }
-        
+       
         translatePos.x = (screenCenterX - viewerRect.left - expectedCanvasOffsetLeft) - (pdfPointX * scale);
         translatePos.y = (screenCenterY - viewerRect.top - expectedCanvasOffsetTop) - (pdfPointY * scale);
-        
+       
         await renderPage(currentPage); 
         pinchState.lastScale = scale; 
     });
@@ -835,25 +836,25 @@
         const delta = e.deltaY > 0 ? -0.1 : 0.1; 
         let newScale = parseFloat((scale + delta).toFixed(2));
         newScale = Math.min(3.0, Math.max(0.5, newScale)); 
-        
+       
         if (Math.abs(newScale - oldScale) < 0.01 && newScale !==0.5 && newScale !== 3.0) return; 
-        
+       
         const viewerRect = pdfViewer.getBoundingClientRect();
         const mouseXViewer = e.clientX - viewerRect.left; 
         const mouseYViewer = e.clientY - viewerRect.top; 
-        
+       
         const canvasRect = canvas.getBoundingClientRect(); 
         const mouseXOnCanvas = e.clientX - canvasRect.left; 
         const mouseYOnCanvas = e.clientY - canvasRect.top; 
-        
+       
         const pdfPointX = mouseXOnCanvas / oldScale;
         const pdfPointY = mouseYOnCanvas / oldScale;
-        
+       
         scale = newScale; 
-        
+       
         const page = await pdfDoc.getPage(currentPage);
         const newViewportCss = page.getViewport({ scale: scale }); 
-        
+       
         let expectedCanvasLeft = 0;
         if (newViewportCss.width < viewerRect.width) {
             expectedCanvasLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -862,10 +863,10 @@
         if (newViewportCss.height < viewerRect.height) {
             expectedCanvasTop = (viewerRect.height - newViewportCss.height) / 2;
         }
-        
+       
         translatePos.x = (mouseXViewer - expectedCanvasLeft) - (pdfPointX * scale);
         translatePos.y = (mouseYViewer - expectedCanvasTop) - (pdfPointY * scale);
-        
+       
         document.getElementById('zoom-slider').value = scale.toFixed(1);
         await renderPage(currentPage); 
     }, { passive: false }); 
@@ -878,7 +879,7 @@
         const { jsPDF } = window.jspdf; 
         const newPdfDocGen = new jsPDF(); 
         while (newPdfDocGen.getNumberOfPages() > 0) { newPdfDocGen.deletePage(1); }
-        
+       
         for (let i = 1; i <= totalPages; i++) {
             const page = await pdfDoc.getPage(i);
             const downloadScale = 2.0; 
@@ -887,9 +888,9 @@
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = viewport.width;
             tempCanvas.height = viewport.height;
-            
+           
             await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
-            
+           
             const signaturesForPage = embeddedSignatures.filter(sig => sig.page === i);
             for (const sigInfo of signaturesForPage) {
                 const img = new Image();
@@ -913,7 +914,7 @@
                     console.error("Saltando firma debido a error de carga:", imgLoadError);
                 }
             }
-            
+           
             const imgData = tempCanvas.toDataURL('image/jpeg', 0.9); 
             newPdfDocGen.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'l' : 'p');
             newPdfDocGen.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
@@ -939,15 +940,13 @@
     }
 
     async function sharePDF() {
-        // Tus logs iniciales (muy útiles, los conservo)
-        console.log("SharePDF: Iniciando proceso de compartir.");
-        console.log("SharePDF: Estado de signatureBoxEl:", signatureBoxEl);
-        if (signatureBoxEl) {
-            console.log("SharePDF: Clases de signatureBoxEl:", signatureBoxEl.classList);
-            console.log("SharePDF: signatureBoxEl ¿contiene 'position-confirmed'?:", signatureBoxEl.classList.contains('position-confirmed'));
+        console.log('[sharePDF] INICIO. Estado de signatureBoxEl:', signatureBoxEl, '- Tipo:', typeof signatureBoxEl);
+        if (signatureBoxEl && typeof signatureBoxEl.classList !== 'undefined') { // Verifica que sea un elemento con classList
+            console.log('[sharePDF] signatureBoxEl.classList:', signatureBoxEl.classList);
+            console.log('[sharePDF] ¿Está signatureBoxEl en el DOM?:', document.body.contains(signatureBoxEl));
+        } else if (signatureBoxEl) {
+            console.warn('[sharePDF] signatureBoxEl existe pero no tiene classList. Es:', signatureBoxEl);
         }
-        console.log("SharePDF: Estado de activeSignatureBoxInfo:", activeSignatureBoxInfo);
-        console.log("SharePDF: Estado de pdfDoc:", pdfDoc ? "Cargado" : "No cargado", "Página actual:", currentPage, "Total de páginas:", totalPages);
 
 
         if (!pdfDoc) {
@@ -965,19 +964,21 @@
 
         let markerToShare = null;
 
-        // Intentar definir markerToShare si hay un cuadro azul no confirmado
-        if (signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed')) {
+        if (signatureBoxEl && typeof signatureBoxEl.getBoundingClientRect === 'function' && !signatureBoxEl.classList.contains('position-confirmed')) {
             console.log("SharePDF: Detectado signatureBoxEl activo y NO confirmado (cuadro azul).");
             const canvasRect = canvas.getBoundingClientRect();
             console.log("SharePDF: Dimensiones de canvasRect:", canvasRect.width, "x", canvasRect.height);
 
             if (canvasRect.width === 0 || canvasRect.height === 0 || currentPage < 1 || currentPage > totalPages ) {
-                console.error("SharePDF: FALLO - PDF no completamente cargado o cuadro en página inválida.");
+                console.error("SharePDF: FALLO INTERNO - PDF no completamente cargado o cuadro en página inválida para definir markerToShare.");
                 showMessage("El PDF no está completamente cargado o el cuadro de firma no está sobre una página válida. Asegúrate que el PDF se vea correctamente e intenta de nuevo.");
                 return; 
             }
-            
+           
             const boxRect = signatureBoxEl.getBoundingClientRect();
+             if (boxRect.width === 0 && boxRect.height === 0 && boxRect.x === 0 && boxRect.y === 0) {
+                console.warn("SharePDF: signatureBoxEl.getBoundingClientRect() devolvió ceros. El elemento podría no estar visible o correctamente en el DOM.");
+             }
             const boxRelToCanvasX = boxRect.left - canvasRect.left;
             const boxRelToCanvasY = boxRect.top - canvasRect.top;
             markerToShare = {
@@ -990,42 +991,41 @@
             };
             console.log("SharePDF: CORRECTO - markerToShare definido desde cuadro azul:", markerToShare);
         } else {
-            // Este log adicional ayuda si el IF anterior fue falso.
-            console.warn("SharePDF: El IF para cuadro azul no confirmado fue FALSO. Verificando por qué no se entró para definir markerToShare...");
-            if (!signatureBoxEl) {
-                console.warn("SharePDF: Razón - signatureBoxEl es null.");
-            } else if (signatureBoxEl.classList.contains('position-confirmed')) {
-                console.warn("SharePDF: Razón - signatureBoxEl SÍ existe, PERO YA ESTÁ CONFIRMADO.");
-            }
+            console.warn("SharePDF: NO se entró al bloque para definir markerToShare. Razones posibles:");
+            if (!signatureBoxEl) console.warn("  - signatureBoxEl es null o undefined.");
+            else if (typeof signatureBoxEl.getBoundingClientRect !== 'function') console.warn("  - signatureBoxEl no es un elemento DOM válido (no tiene getBoundingClientRect).");
+            else if (signatureBoxEl.classList.contains('position-confirmed')) console.warn("  - signatureBoxEl YA ESTÁ CONFIRMADO (es discontinuo).");
+            else console.warn("  - Otra condición desconocida.");
         }
 
-        // Si markerToShare NO se pudo definir, mostrar instrucciones detalladas.
-        // ESTE ES EL BLOQUE MODIFICADO QUE YA TENÍAS Y QUE ES CORRECTO:
         if (!markerToShare) {
-            let reason = "No se encontró un cuadro azul editable para compartir."; // Razón por defecto
-            if (!signatureBoxEl) {
-                reason = "No hay ningún cuadro de firma en la página (signatureBoxEl es null).";
+            let reason = "No se encontró un cuadro azul editable y válido para compartir."; 
+            const canvasRectForCheck = canvas.getBoundingClientRect();
+
+            if (!signatureBoxEl || typeof signatureBoxEl.classList === 'undefined') { // Modificado para ser más robusto
+                reason = "No hay ningún cuadro de firma en la página (debe añadir uno con '✍️ Añadir Firma').";
             } else if (signatureBoxEl.classList.contains('position-confirmed')) {
-                reason = "El cuadro de firma actual YA ESTÁ CONFIRMADO (tiene borde discontinuo, no es el cuadro azul inicial).";
-            } else { // Otra razón por la que el IF principal pudo fallar (aunque sería raro si signatureBoxEl existe)
-                 reason = "El cuadro de firma no está en el estado esperado (no es azul y editable).";
+                reason = "El cuadro de firma actual YA ESTÁ CONFIRMADO (para compartir, debe ser el cuadro azul editable, no el discontinuo). Edítelo (✏️) o cree uno nuevo.";
+            } else if (canvasRectForCheck.width === 0 || canvasRectForCheck.height === 0) {
+                reason = "El PDF no parece estar completamente renderizado en pantalla (el área del canvas es cero). Asegúrese de que el PDF es visible e inténtelo de nuevo.";
+            } else if (currentPage < 1 || currentPage > totalPages) {
+                reason = "La página actual del PDF es inválida. Intente navegar a una página válida del documento y luego compartir.";
+            } else {
+                reason = "El cuadro de firma está presente y es editable, pero ocurrió un problema al procesarlo. Verifique la consola para más detalles técnicos.";
             }
-            
-            console.error("SharePDF: FALLO AL PREPARAR MARCADOR PARA COMPARTIR. " + reason, 
-                          "Estado signatureBoxEl:", signatureBoxEl, 
-                          "Clases:", signatureBoxEl ? signatureBoxEl.classList.toString() : "N/A", 
+           
+            console.error("SharePDF: FALLO AL PREPARAR MARCADOR PARA COMPARTIR. Razón determinada: " + reason, 
+                          "Estado de signatureBoxEl al momento del diagnóstico:", signatureBoxEl, 
                           "PDF Cargado:", pdfDoc ? "Sí" : "No", 
                           "Página Actual:", currentPage, "Total Páginas:", totalPages,
-                          "Canvas Width:", canvas.getBoundingClientRect().width, "Canvas Height:", canvas.getBoundingClientRect().height);
-            
+                          "Canvas Width:", canvasRectForCheck.width, "Canvas Height:", canvasRectForCheck.height);
+           
             showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma'.\n2. Posiciona y dimensiona el cuadro azul.\n3. Presiona '📤 Compartir' (NO hagas clic en ✔️ en el cuadro azul).\n\n" +
-                        "AYUDA: Asegúrate de que el cuadro en pantalla sea azul y tenga los controles ✔️ y 🗑️. Si el cuadro tiene borde discontinuo y controles ✍️ y ✏️, significa que ya lo confirmaste. Para compartirlo con Usuario B, edítalo (✏️) para que vuelva a ser azul, o elimínalo y añade uno nuevo.\n\n" +
+                        "AYUDA: Asegúrate de que el cuadro en pantalla sea azul y tenga los controles ✔️ y 🗑️. Si el cuadro tiene borde discontinuo y controles ✍️ y ✏️, significa que ya lo confirmaste para ti. Para compartirlo con Usuario B, edítalo (✏️) para que vuelva a ser azul, o elimínalo y añade uno nuevo.\n\n" +
                         "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
             return;
         }
-        // FIN DEL BLOQUE MODIFICADO
-        
-        // Si llegamos aquí, markerToShare está definido y listo.
+       
         showMessage("Preparando documento para compartir...");
         const documentId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         sharedDocIdForUserA = documentId;
@@ -1056,7 +1056,7 @@
 
             const shareUrl = `${window.location.origin}${window.location.pathname}?doc_id=${documentId}&mode=sign_for_user_b`;
             showMessage(`Documento listo para Usuario B.\nComparte esta URL:\nID Documento: ${documentId}`, true, shareUrl);
-            
+           
             const checkBtn = document.getElementById('check-signatures-btn');
             if (checkBtn) checkBtn.style.display = 'inline-block';
 
@@ -1072,28 +1072,54 @@
         }
     }
 
-
     function addSignatureBox() {
+      console.log('[addSignatureBox] Llamada. Estado actual de signatureBoxEl:', signatureBoxEl);
       if (!pdfDoc) {
         showMessage("Por favor, carga un documento PDF primero.");
         return;
       }
       if (signatureBoxEl) { 
-        signatureBoxEl.remove(); 
+        console.log('[addSignatureBox] Hay un signatureBoxEl existente, se removerá.');
+        try {
+            signatureBoxEl.remove();
+        } catch(e) {
+            console.warn('[addSignatureBox] Error al remover signatureBoxEl existente del DOM:', e);
+        }
       }
+      signatureBoxEl = null; // Anular explícitamente antes de reasignar
       activeSignatureBoxInfo = null; 
 
-      signatureBoxEl = document.createElement('div');
-      signatureBoxEl.className = 'signature-box';
-      signatureBoxEl.style.width = '150px'; 
-      signatureBoxEl.style.height = '75px';
-      const viewerRect = pdfViewer.getBoundingClientRect();
-      signatureBoxEl.style.left = `${(viewerRect.width - 150) / 2}px`;
-      signatureBoxEl.style.top = `${(viewerRect.height - 75) / 2}px`;
-      pdfViewer.appendChild(signatureBoxEl);
-      makeSignatureBoxEditable(signatureBoxEl); 
+      try {
+          signatureBoxEl = document.createElement('div'); 
+          signatureBoxEl.className = 'signature-box';
+          signatureBoxEl.style.width = '150px'; 
+          signatureBoxEl.style.height = '75px';
+          
+          const viewerRect = pdfViewer.getBoundingClientRect();
+          if (!pdfViewer || (viewerRect.width === 0 && viewerRect.height === 0 && !pdfViewer.offsetParent)) { // Chequeo más robusto
+              console.error("[addSignatureBox] pdfViewer no está disponible, no tiene dimensiones o no está visible.");
+              showMessage("Error: El visor de PDF no está listo para añadir una firma.");
+              signatureBoxEl = null; 
+              return;
+          }
+          signatureBoxEl.style.left = `${Math.max(0, (viewerRect.width - 150) / 2)}px`; // Evitar posiciones negativas
+          signatureBoxEl.style.top = `${Math.max(0, (viewerRect.height - 75) / 2)}px`;
+          
+          pdfViewer.appendChild(signatureBoxEl); 
+          console.log('[addSignatureBox] Nuevo signatureBoxEl creado y añadido al DOM. Referencia actual:', signatureBoxEl);
+
+          makeSignatureBoxEditable(signatureBoxEl); 
+          console.log('[addSignatureBox] makeSignatureBoxEditable llamado. signatureBoxEl debería ser el nuevo cuadro.');
+      } catch (error) {
+          console.error('[addSignatureBox] ERROR CRÍTICO durante la creación/configuración del cuadro:', error);
+          showMessage('Se produjo un error crítico al intentar añadir el cuadro de firma. Revise la consola.');
+          if (signatureBoxEl && signatureBoxEl.parentElement) {
+              signatureBoxEl.remove(); 
+          }
+          signatureBoxEl = null; 
+      }
     }
-    
+   
     function repositionActiveSignatureBox() {
         if (!activeSignatureBoxInfo || !activeSignatureBoxInfo.element || !pdfViewer || !canvas || !pdfDoc) {
             return;
@@ -1107,7 +1133,7 @@
             const displayY = (sig.y * scale) + (canvasRect.top - viewerRect.top);
             const displayWidth = sig.width * scale;
             const displayHeight = sig.height * scale;
-            
+           
             boxEl.style.left = `${displayX}px`;
             boxEl.style.top = `${displayY}px`;
             boxEl.style.width = `${displayWidth}px`;
@@ -1118,27 +1144,33 @@
         }
     }
 
-    function confirmSignatureBoxPlacement(boxEl) {
+    function confirmSignatureBoxPlacement(boxEl) { // boxEl es el signatureBoxEl azul
+        console.log('[confirmSignatureBoxPlacement] Confirmando. signatureBoxEl es:', boxEl);
         if (!boxEl || !pdfDoc) return; 
         const handles = boxEl.querySelectorAll('.resize-handle');
         handles.forEach(h => h.remove());
         boxEl.classList.add('position-confirmed'); 
-        
+       
         const canvasRect = canvas.getBoundingClientRect();
         const boxRect = boxEl.getBoundingClientRect();
         const boxRelToCanvasX = boxRect.left - canvasRect.left;
         const boxRelToCanvasY = boxRect.top - canvasRect.top;
-        
-        activeSignatureBoxInfo = {
-            element: boxEl,
+       
+        activeSignatureBoxInfo = { // Guarda info del cuadro confirmado
+            element: boxEl, // boxEl (antes signatureBoxEl) es ahora el cuadro confirmado
             page: currentPage,
             x: boxRelToCanvasX / scale, 
             y: boxRelToCanvasY / scale, 
-            width: boxRect.width / scale,   
+            width: boxRect.width / scale,  
             height: boxRect.height / scale  
         };
+        // signatureBoxEl sigue siendo boxEl, ahora con clase 'position-confirmed'
+        console.log('[confirmSignatureBoxPlacement] activeSignatureBoxInfo establecido:', activeSignatureBoxInfo);
+        console.log('[confirmSignatureBoxPlacement] signatureBoxEl (ahora confirmado) es:', signatureBoxEl);
+
+
         repositionActiveSignatureBox(); 
-        
+       
         let controls = boxEl.querySelector('.signature-box-controls');
         if (!controls) { 
             controls = document.createElement('div');
@@ -1146,25 +1178,26 @@
             boxEl.appendChild(controls);
         }
         controls.innerHTML = ''; 
-        
+       
         const drawBtn = document.createElement('button');
         drawBtn.className = 'signature-box-btn draw';
         drawBtn.innerHTML = '✍️'; 
         drawBtn.title = 'Dibujar Firma';
         drawBtn.onclick = (e) => { e.stopPropagation(); openSignatureModal(); };
-        
+       
         const editPosBtn = document.createElement('button');
         editPosBtn.className = 'signature-box-btn edit';
         editPosBtn.innerHTML = '✏️'; 
         editPosBtn.title = 'Editar Posición';
-        editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); };
-        
+        editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); }; // boxEl es el signatureBoxEl actual
+       
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'signature-box-btn cancel';
         cancelBtn.innerHTML = '❌'; 
         cancelBtn.title = 'Cancelar Firma';
         cancelBtn.onclick = (e) => { 
             e.stopPropagation(); 
+            console.log('[confirmSignatureBoxPlacement > cancelBtn] Removiendo cuadro confirmado y anulando signatureBoxEl.');
             boxEl.remove(); 
             signatureBoxEl = null; 
             activeSignatureBoxInfo = null; 
@@ -1174,14 +1207,18 @@
         controls.appendChild(cancelBtn);
     }
 
-    function makeSignatureBoxEditable(boxEl) {
-        if (!boxEl) return;
-        activeSignatureBoxInfo = null; 
+    function makeSignatureBoxEditable(boxEl) { // boxEl es el signatureBoxEl actual que se quiere (re)editar
+        console.log('[makeSignatureBoxEditable] Haciendo editable. signatureBoxEl es:', boxEl);
+        if (!boxEl) {
+            console.warn('[makeSignatureBoxEditable] boxEl es null, no se puede hacer editable.');
+            return;
+        }
+        activeSignatureBoxInfo = null; // Si se edita, ya no es "activo confirmado" para firma
         boxEl.classList.remove('position-confirmed'); 
         boxEl.style.cursor = 'move'; 
         boxEl.querySelectorAll('.resize-handle').forEach(h => h.remove()); 
         addResizeHandlesToSigBox(boxEl); 
-        
+       
         let controls = boxEl.querySelector('.signature-box-controls');
         if (!controls) {
             controls = document.createElement('div');
@@ -1189,26 +1226,28 @@
             boxEl.appendChild(controls);
         }
         controls.innerHTML = ''; 
-        
+       
         const confirmPlacementBtn = document.createElement('button');
         confirmPlacementBtn.className = 'signature-box-btn confirm';
         confirmPlacementBtn.innerHTML = '✔️'; 
         confirmPlacementBtn.title = 'Confirmar Posición';
         confirmPlacementBtn.onclick = (e) => { e.stopPropagation(); confirmSignatureBoxPlacement(boxEl); };
-        
-        const cancelBtn = document.createElement('button');
+       
+        const cancelBtn = document.createElement('button'); // Este es el "eliminar cuadro azul"
         cancelBtn.className = 'signature-box-btn cancel';
         cancelBtn.innerHTML = '🗑️'; 
         cancelBtn.title = 'Eliminar este cuadro';
         cancelBtn.onclick = (e) => { 
             e.stopPropagation(); 
+            console.log('[makeSignatureBoxEditable > cancelBtn] Removiendo cuadro azul y anulando signatureBoxEl.');
             boxEl.remove(); 
-            signatureBoxEl = null; 
+            signatureBoxEl = null; // Aquí se anula la referencia global si se elimina el cuadro azul
             activeSignatureBoxInfo = null; 
         };
         controls.appendChild(confirmPlacementBtn);
         controls.appendChild(cancelBtn);
         setupSigBoxDragEvents(boxEl); 
+        console.log('[makeSignatureBoxEditable] Terminado. signatureBoxEl (debería ser azul y editable):', signatureBoxEl);
     }
 
     const _onSigBoxDragMove = (e) => { 
@@ -1353,12 +1392,12 @@
 
     function openSignatureModal() { 
       if (!activeSignatureBoxInfo && signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed')) {
-          showMessage("Primero confirma la posición del cuadro de firma (botón ✔️ del cuadro azul).");
-          return;
+         showMessage("Primero confirma la posición del cuadro de firma (botón ✔️ del cuadro azul).");
+         return;
       }
       if (!activeSignatureBoxInfo) {
-           showMessage("Error: No hay información del cuadro de firma activo. Confirma la posición primero.");
-           return;
+          showMessage("Error: No hay información del cuadro de firma activo. Confirma la posición primero.");
+          return;
       }
 
       signatureModalEl = document.createElement('div');
@@ -1372,33 +1411,33 @@
       canvasContainer.appendChild(signaturePadCanvasEl);
       container.appendChild(canvasContainer);
       signaturePadCtxEl = signaturePadCanvasEl.getContext('2d');
-      
+     
       const controls = document.createElement('div');
       controls.className = 'signature-controls';
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'signature-control-btn cancel';
       cancelBtn.textContent = '❌ Cancelar';
       cancelBtn.onclick = () => { signatureModalEl.remove(); signatureModalEl = null; };
-      
+     
       const clearBtn = document.createElement('button');
       clearBtn.className = 'signature-control-btn clear';
       clearBtn.textContent = '↩️ Limpiar';
       clearBtn.onclick = () => {
         signaturePadCtxEl.clearRect(0, 0, signaturePadCanvasEl.width / (window.devicePixelRatio||1) , signaturePadCanvasEl.height / (window.devicePixelRatio||1) );
       };
-      
+     
       const confirmBtn = document.createElement('button');
       confirmBtn.className = 'signature-control-btn confirm';
       confirmBtn.textContent = '✔️ Firmar';
       confirmBtn.onclick = embedSignature; 
-      
+     
       controls.appendChild(cancelBtn);
       controls.appendChild(clearBtn);
       controls.appendChild(confirmBtn);
       container.appendChild(controls);
       signatureModalEl.appendChild(container);
       document.body.appendChild(signatureModalEl);
-      
+     
       requestAnimationFrame(() => {
         const rect = canvasContainer.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -1447,9 +1486,9 @@
         lastDrawPadPosEl = currentPos;
       }
       function stopPadDraw() {
-          if(isDrawingOnPadEl) {
-            isDrawingOnPadEl = false;
-          }
+         if(isDrawingOnPadEl) {
+           isDrawingOnPadEl = false;
+         }
       }
       signaturePadCanvasEl.addEventListener('mousedown', startPadDraw);
       signaturePadCanvasEl.addEventListener('mousemove', drawOnPad);
@@ -1465,7 +1504,7 @@
         tempCanvasTest.width = signaturePadCanvasEl.width; 
         tempCanvasTest.height = signaturePadCanvasEl.height;
         const blankDataURL = tempCanvasTest.toDataURL();
-        
+       
         if (!activeSignatureBoxInfo) { 
             showMessage("Error: No hay información del cuadro de firma activo.");
             if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
@@ -1480,21 +1519,24 @@
         const signatureImgElement = document.createElement('img');
         signatureImgElement.className = 'embedded-signature'; 
         signatureImgElement.src = dataURL;
-        
+       
         const signatureInfo = {
             element: signatureImgElement, 
-            page: activeSignatureBoxInfo.page,      
+            page: activeSignatureBoxInfo.page,     
             x: activeSignatureBoxInfo.x, y: activeSignatureBoxInfo.y, 
             width: activeSignatureBoxInfo.width, height: activeSignatureBoxInfo.height, 
-            dataURL: dataURL        
+            dataURL: dataURL       
         };
         embeddedSignatures.push(signatureInfo); 
         pdfViewer.appendChild(signatureImgElement); 
-        
-        if(activeSignatureBoxInfo.element) activeSignatureBoxInfo.element.remove(); 
-        signatureBoxEl = null; 
+       
+        if(activeSignatureBoxInfo.element) { // El activeSignatureBoxInfo.element es el signatureBoxEl que fue confirmado
+            console.log('[embedSignature] Removiendo el cuadro de firma confirmado (era signatureBoxEl) y anulando signatureBoxEl.');
+            activeSignatureBoxInfo.element.remove(); 
+        }
+        signatureBoxEl = null; // Después de firmar en un cuadro, ya no hay un "cuadro de firma interactivo" principal
         activeSignatureBoxInfo = null; 
-        
+       
         if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
         repositionSignatures(); 
     }
@@ -1507,7 +1549,7 @@
 
         const pdfCanvasScreenLeftInViewer = pdfCanvasRect.left - viewerRect.left;
         const pdfCanvasScreenTopInViewer = pdfCanvasRect.top - viewerRect.top;
-        
+       
         embeddedSignatures.forEach(sig => {
             if (sig.element) {
                 if (sig.page === currentPage) { 
@@ -1515,7 +1557,7 @@
                     const displayY = (sig.y * scale) + pdfCanvasScreenTopInViewer;
                     const displayWidth = sig.width * scale;
                     const displayHeight = sig.height * scale;
-                    
+                   
                     sig.element.style.left = `${displayX}px`;
                     sig.element.style.top = `${displayY}px`;
                     sig.element.style.width = `${displayWidth}px`;
@@ -1527,7 +1569,7 @@
             }
         });
     }
-    
+   
     function adjustViewerHeightAndRender() {
         const headerElement = document.querySelector('header');
         if (headerElement && pdfViewer) {
@@ -1593,21 +1635,21 @@
         canvasContainer.appendChild(signaturePadCanvasEl);
         container.appendChild(canvasContainer);
         signaturePadCtxEl = signaturePadCanvasEl.getContext('2d');
-        
+       
         const controls = document.createElement('div');
         controls.className = 'signature-controls';
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'signature-control-btn cancel';
         cancelBtn.textContent = '❌ Cancelar';
         cancelBtn.onclick = () => { signatureModalEl.remove(); signatureModalEl = null; };
-        
+       
         const clearBtn = document.createElement('button');
         clearBtn.className = 'signature-control-btn clear';
         clearBtn.textContent = '↩️ Limpiar';
         clearBtn.onclick = () => {
             signaturePadCtxEl.clearRect(0, 0, signaturePadCanvasEl.width / (window.devicePixelRatio||1), signaturePadCanvasEl.height / (window.devicePixelRatio||1));
         };
-        
+       
         const confirmBtn = document.createElement('button');
         confirmBtn.className = 'signature-control-btn confirm';
         confirmBtn.textContent = '✔️ Confirmar y Enviar Firma';
@@ -1623,14 +1665,14 @@
             if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
             await saveUserBSignatureToSupabase(markerToSign, signatureDataURL);
         };
-        
+       
         controls.appendChild(cancelBtn);
         controls.appendChild(clearBtn);
         controls.appendChild(confirmBtn);
         container.appendChild(controls);
         signatureModalEl.appendChild(container);
         document.body.appendChild(signatureModalEl);
-        
+       
         requestAnimationFrame(() => {
             const rect = canvasContainer.getBoundingClientRect();
             const dpr = window.devicePixelRatio || 1;
@@ -1727,12 +1769,12 @@
                     const existingSignature = embeddedSignatures.find(sig => sig.marker_id_ref === marker.marker_id);
                     if (existingSignature) {
                         if(existingSignature.element && !pdfViewer.contains(existingSignature.element)){
-                            pdfViewer.appendChild(existingSignature.element); // Re-add if removed
+                             pdfViewer.appendChild(existingSignature.element); 
                         }
                         console.log(`Firma para ${marker.marker_id} ya está en embeddedSignatures o siendo procesada.`);
                         continue; 
                     }
-                    
+                   
                     console.log(`Descargando firma para marcador ${marker.marker_id} desde ${marker.signed_signature_storage_path}`);
                     const { data: signatureDownloadData, error: signatureDownloadError } = await supabaseClient.storage
                         .from('pdfs') 
@@ -1781,13 +1823,13 @@
                     const allSignedAndPresent = markers
                         .filter(m => m.status === 'signed_by_user_b')
                         .every(m => embeddedSignatures.some(es => es.marker_id_ref === m.marker_id));
-                    
+                   
                     if (markers.some(m=> m.status === 'signed_by_user_b') && allSignedAndPresent) {
                          showMessage("Todas las firmas disponibles ya han sido cargadas.");
                     } else if (!markers.some(m => m.status === 'signed_by_user_b')) {
-                        showMessage("Aún no hay firmas de Usuario B para este documento.");
+                         showMessage("Aún no hay firmas de Usuario B para este documento.");
                     } else {
-                         showMessage("No hay nuevas firmas o todas las firmas ya han sido cargadas.");
+                          showMessage("No hay nuevas firmas o todas las firmas ya han sido cargadas.");
                     }
                 }
             }
@@ -1820,7 +1862,7 @@
         if (isDraggingPdf) isDraggingPdf = false;
         if (pinchState.active && e.touches.length < 2) pinchState.active = false; 
     });
-    
+   
     window.addEventListener('load', async () => { 
         adjustViewerHeightAndRender();
         const urlParams = new URLSearchParams(window.location.search);
@@ -1853,15 +1895,15 @@
                     .eq('doc_id', docIdFromUrl);
 
                 if (markerError) throw new Error(`Error obteniendo marcador: ${markerError.message}`);
-                
+               
                 const targetMarker = markers ? markers.find(m => m.status === 'pending_user_b_signature' || m.status === 'signed_by_user_b') : null;
 
                 if (!targetMarker) {
-                     showMessage("Documento no encontrado, ya procesado, o enlace inválido.");
-                     if (window.history.replaceState) { window.history.replaceState({}, document.title, window.location.pathname); }
+                    showMessage("Documento no encontrado, ya procesado, o enlace inválido.");
+                    if (window.history.replaceState) { window.history.replaceState({}, document.title, window.location.pathname); }
                     return;
                 }
-                
+               
                 markerDataForUserB = targetMarker; 
                 let pdfPathInStorage = markerDataForUserB.pdf_storage_path;
 
@@ -1873,9 +1915,9 @@
                     if (listError || !fileList || fileList.length === 0) {
                         throw new Error(`No se encontró el archivo PDF en storage para ${docIdFromUrl}: ${listError ? listError.message : 'Lista vacía'}`);
                     }
-                    pdfPathInStorage = fileList[0].name; // Solo el nombre, asumir que está en documents/docIdFromUrl/
+                    pdfPathInStorage = fileList[0].name; 
                     originalFileName = fileList[0].name;
-                    pdfPathInStorage = `documents/${docIdFromUrl}/${pdfPathInStorage}`; // Path completo
+                    pdfPathInStorage = `documents/${docIdFromUrl}/${pdfPathInStorage}`; 
                 } else {
                     originalFileName = pdfPathInStorage.split('/').pop(); 
                 }
@@ -1889,7 +1931,7 @@
 
                 const reader = new FileReader();
                 reader.onload = async function (e_reader) {
-                    try { // Añadir try-catch aquí también
+                    try { 
                         if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
                             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
                         }
@@ -1900,7 +1942,7 @@
                         translatePos = { x: 0, y: 0 }; scale = 1;
                         document.getElementById('zoom-slider').value = scale;
                         document.getElementById('total-pages').textContent = totalPages;
-                        
+                       
                         embeddedSignatures = [];
                         document.querySelectorAll('.embedded-signature').forEach(el => el.remove());
                         if (signatureBoxEl) { signatureBoxEl.remove(); signatureBoxEl = null; activeSignatureBoxInfo = null;}
@@ -1916,7 +1958,7 @@
                                const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
                             });
                             const placeholderArea = document.getElementById('user-b-sig-area');
-                            if (placeholderArea) { // displayMarkerForUserB debería haberla creado
+                            if (placeholderArea) { 
                                 placeholderArea.innerHTML = `<img src="${sigDataURL}" style="width:100%; height:100%; object-fit:contain;" alt="Firma"/>`;
                                 placeholderArea.style.border = '1px solid green';
                                 placeholderArea.style.cursor = 'default';
