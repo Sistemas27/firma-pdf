@@ -518,7 +518,7 @@
     let isZoomed = false;
 
     let embeddedSignatures = [];
-    let signatureBoxEl = null; // Variable global para el cuadro de firma
+    let signatureBoxEl = null; 
     let activeSignatureBoxInfo = null; 
     let isDraggingSigBox = false;
     let isResizingSigBox = false;
@@ -963,18 +963,17 @@
 
         let markerToShare = null;
 
-        // FLUJO PRINCIPAL: Compartir el cuadro "estático" (confirmado)
         if (signatureBoxEl && signatureBoxEl.classList.contains('position-confirmed') && activeSignatureBoxInfo && activeSignatureBoxInfo.element === signatureBoxEl) {
             console.log("[sharePDF] Usando CUADRO CONFIRMADO (estático) y activeSignatureBoxInfo.");
             
             if (activeSignatureBoxInfo.page < 1 || activeSignatureBoxInfo.page > totalPages) {
                 console.error("[sharePDF] La página del cuadro de firma confirmado (" + activeSignatureBoxInfo.page + ") es inválida.");
                 showMessage("Error: La página registrada para el cuadro de firma confirmado es inválida. Intente editar y confirmar de nuevo el cuadro en una página válida.");
-                return; // markerToShare seguirá null
+                return;
             }
             markerToShare = {
                 page: activeSignatureBoxInfo.page,
-                x_coord: activeSignatureBoxInfo.x, // Ya están escaladas a PDF original
+                x_coord: activeSignatureBoxInfo.x,
                 y_coord: activeSignatureBoxInfo.y,
                 width_val: activeSignatureBoxInfo.width,
                 height_val: activeSignatureBoxInfo.height,
@@ -982,32 +981,10 @@
             };
             console.log("[sharePDF] CORRECTO - markerToShare definido desde cuadro CONFIRMADO (estático):", markerToShare);
         
-        } 
-        // Fallback opcional: si se quisiera compartir el azul (NO es el flujo deseado ahora)
-        /* else if (signatureBoxEl && typeof signatureBoxEl.getBoundingClientRect === 'function' && !signatureBoxEl.classList.contains('position-confirmed')) {
-            console.log("[sharePDF] Usando CUADRO AZUL (no confirmado). ESTO ES UN FALLBACK, NO EL FLUJO PRINCIPAL DESEADO.");
-            const canvasRect = canvas.getBoundingClientRect();
-            if (canvasRect.width === 0 || canvasRect.height === 0 || currentPage < 1 || currentPage > totalPages ) {
-                showMessage("El PDF no está completamente cargado o el cuadro de firma no está sobre una página válida.");
-                return; 
-            }
-            const boxRect = signatureBoxEl.getBoundingClientRect();
-            const boxRelToCanvasX = boxRect.left - canvasRect.left;
-            const boxRelToCanvasY = boxRect.top - canvasRect.top;
-            markerToShare = {
-                page: currentPage,
-                x_coord: boxRelToCanvasX / scale,
-                y_coord: boxRelToCanvasY / scale,
-                width_val: boxRect.width / scale,
-                height_val: boxRect.height / scale,
-                status: 'pending_user_b_signature'
-            };
-        } */
-        else {
-            // Si no se cumplió la condición principal (cuadro confirmado)
-            console.warn("[sharePDF] No se cumplió la condición para compartir el cuadro confirmado.");
+        } else {
+            console.warn("[sharePDF] No se cumplió la condición para compartir el cuadro confirmado (estático).");
             if (!signatureBoxEl) console.warn("  - signatureBoxEl es null.");
-            else if (!signatureBoxEl.classList.contains('position-confirmed')) console.warn("  - signatureBoxEl existe pero NO está confirmado (es azul).");
+            else if (!signatureBoxEl.classList.contains('position-confirmed')) console.warn("  - signatureBoxEl existe pero NO está confirmado (es azul). Se requiere el cuadro estático (borde discontinuo).");
             else if (!activeSignatureBoxInfo || activeSignatureBoxInfo.element !== signatureBoxEl) console.warn("  - signatureBoxEl está confirmado, pero activeSignatureBoxInfo es inválido o no coincide.");
         }
 
@@ -1016,15 +993,12 @@
             let reason = "No se encontró un cuadro de firma confirmado (estático) para compartir."; 
             
             if (!signatureBoxEl) {
-                reason = "No hay ningún cuadro de firma en la página.";
+                reason = "No hay ningún cuadro de firma en la página. Debe añadir uno (✍️) y luego confirmarlo (✔️).";
             } else if (!signatureBoxEl.classList.contains('position-confirmed')) {
                 reason = "El cuadro de firma actual es azul (editable). Primero debe confirmarlo (con ✔️) para que se vuelva estático y pueda ser compartido.";
             } else if (!activeSignatureBoxInfo || activeSignatureBoxInfo.element !== signatureBoxEl) {
-                // Esto puede pasar si signatureBoxEl es el confirmado, pero activeSignatureBoxInfo se perdió o es de otro elemento.
                 reason = "El cuadro de firma está confirmado, pero hay una inconsistencia con sus datos internos. Intente editarlo (✏️) y confirmarlo (✔️) de nuevo.";
             } else { 
-                 // Si activeSignatureBoxInfo existe y coincide con signatureBoxEl (confirmado), pero markerToShare es null
-                 // esto podría ser por la validación de página en la lógica de arriba.
                 if (activeSignatureBoxInfo && (activeSignatureBoxInfo.page < 1 || activeSignatureBoxInfo.page > totalPages)) {
                      reason = "La página registrada para el cuadro de firma confirmado es inválida.";
                 } else {
@@ -1042,7 +1016,6 @@
             return;
         }
        
-        // Si llegamos aquí, markerToShare está definido y listo para Supabase.
         showMessage("Preparando documento para compartir...");
         const documentId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         sharedDocIdForUserA = documentId;
@@ -1056,7 +1029,10 @@
                     cacheControl: '3600',
                     upsert: false
                 });
-            if (uploadError) throw new Error(`Error al subir PDF original: ${uploadError.message}`);
+            if (uploadError) {
+                console.error("Error subiendo PDF original a Storage:", uploadError);
+                throw new Error(`Error al subir PDF original: ${uploadError.message || JSON.stringify(uploadError)}`);
+            }
             console.log("PDF original subido, path:", uploadData.path);
 
             const markerForDb = {
@@ -1065,10 +1041,15 @@
                 pdf_storage_path: uploadData.path, 
                 ...markerToShare
             };
+            console.log("[sharePDF] Intentando insertar en signature_markers:", markerForDb);
             const { error: markersError } = await supabaseClient
                 .from('signature_markers')
                 .insert([markerForDb]);
-            if (markersError) throw new Error(`Error al guardar marcador: ${markersError.message}`);
+            
+            if (markersError) {
+                console.error("Raw Supabase insert error (signature_markers):", markersError); // LOG COMPLETO DEL ERROR
+                throw new Error(`Error al guardar marcador: ${markersError.message || 'No message property, ver consola para objeto de error completo.'}`);
+            }
             console.log("Información del marcador para Usuario B guardada.");
 
             const shareUrl = `${window.location.origin}${window.location.pathname}?doc_id=${documentId}&mode=sign_for_user_b`;
@@ -1077,13 +1058,31 @@
             const checkBtn = document.getElementById('check-signatures-btn');
             if (checkBtn) checkBtn.style.display = 'inline-block';
 
-        } catch (error) {
+        } catch (error) { 
             console.error("Excepción detallada en sharePDF (operaciones Supabase):", error);
-            let userMessage = `Error al compartir: ${error.message || "Error desconocido."}\n\n`;
-            if (error.message && error.message.includes("signature_markers")) {
-                userMessage += "Verifica la tabla 'signature_markers' y sus políticas RLS en Supabase.\n";
-            } else if (error.message && (error.message.includes("bucket") || error.message.includes("Storage"))) {
-                userMessage += "Verifica el bucket 'pdfs' en Supabase Storage y sus políticas de acceso.\n";
+            let specificMessage = "Error desconocido durante la operación de compartir.";
+            if (error && error.message) {
+                specificMessage = error.message; 
+            }
+
+            if (specificMessage.includes("No message property, ver consola para objeto de error completo")) {
+                 specificMessage += " (El objeto de error original de Supabase no tuvo una propiedad 'message' directa. Revisa la consola del navegador donde dice 'Raw Supabase insert error').";
+            }
+
+            let userMessage = `Error al compartir: ${specificMessage}\n\n`;
+            
+            if (error && error.message && (error.message.includes("guardar marcador") || error.message.includes("signature_markers") || error.message.includes("No message property"))) {
+                userMessage += "POSIBLES CAUSAS DEL FALLO AL GUARDAR MARCADOR:\n" +
+                               "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
+                               "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
+                               "   Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
+                               "3. Problema de conexión o con el servicio de Supabase.\n\n" +
+                               "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
+            } else if (error && error.message && (error.message.includes("subir PDF original") || error.message.includes("Storage"))) {
+                userMessage += "POSIBLES CAUSAS DEL FALLO AL SUBIR PDF:\n" +
+                               "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
+                               "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
+                               "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
             }
             showMessage(userMessage);
         }
@@ -1138,27 +1137,14 @@
     }
    
     function repositionActiveSignatureBox() {
-        // Esta función reposiciona el activeSignatureBoxInfo.element, que es el cuadro confirmado.
         if (!activeSignatureBoxInfo || !activeSignatureBoxInfo.element || !pdfViewer || !canvas || !pdfDoc) {
-            // Si no hay un activeSignatureBoxInfo, pero sí un signatureBoxEl azul, reposicionarlo.
-             if (signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed') && pdfViewer && canvas && pdfDoc) {
-                const boxElToReposition = signatureBoxEl;
-                const canvasRect = canvas.getBoundingClientRect();
-                const viewerRect = pdfViewer.getBoundingClientRect();
-                // Calcular posición relativa al viewer, no al canvas, ya que es un cuadro "flotante"
-                // Esta parte necesita revisión si el cuadro azul se va a mantener estrictamente sobre el canvas.
-                // Por ahora, lo dejamos como estaba para el azul.
-                // La lógica original de posicionamiento del azul era en addSignatureBox y al arrastrarlo.
-                // Este es un punto a considerar: el azul no se reposicionaba con el zoom/pan del PDF de forma automática.
-             }
             return;
         }
         const sig = activeSignatureBoxInfo;
-        const boxEl = sig.element; // Este es el cuadro confirmado (antes signatureBoxEl)
+        const boxEl = sig.element; 
         if (sig.page === currentPage) {
             const canvasRect = canvas.getBoundingClientRect(); 
             const viewerRect = pdfViewer.getBoundingClientRect();
-            // Las coords sig.x, sig.y son relativas al PDF original (scale 1)
             const displayX = (sig.x * scale) + (canvasRect.left - viewerRect.left);
             const displayY = (sig.y * scale) + (canvasRect.top - viewerRect.top);
             const displayWidth = sig.width * scale;
@@ -1174,7 +1160,7 @@
         }
     }
 
-    function confirmSignatureBoxPlacement(boxEl) { // boxEl es el signatureBoxEl azul
+    function confirmSignatureBoxPlacement(boxEl) { 
         console.log('[confirmSignatureBoxPlacement] Confirmando. El cuadro azul es:', boxEl);
         if (!boxEl || !pdfDoc) return; 
         const handles = boxEl.querySelectorAll('.resize-handle');
@@ -1182,27 +1168,25 @@
         boxEl.classList.add('position-confirmed'); 
        
         const canvasRect = canvas.getBoundingClientRect();
-        const boxRect = boxEl.getBoundingClientRect(); // Coords del cuadro azul en pantalla
+        const boxRect = boxEl.getBoundingClientRect(); 
         
-        // Convertir coords de pantalla del cuadro azul a coords relativas al PDF (scale 1)
         const boxRelToCanvasX = (boxRect.left - canvasRect.left) / scale; 
         const boxRelToCanvasY = (boxRect.top - canvasRect.top) / scale;
         const pdfWidth = boxRect.width / scale;
         const pdfHeight = boxRect.height / scale;
        
         activeSignatureBoxInfo = { 
-            element: boxEl, // boxEl (antes el signatureBoxEl azul) es ahora el cuadro confirmado (estático)
+            element: boxEl, 
             page: currentPage,
             x: boxRelToCanvasX, 
             y: boxRelToCanvasY, 
             width: pdfWidth,  
             height: pdfHeight  
         };
-        // signatureBoxEl sigue siendo boxEl, ahora con clase 'position-confirmed'. Es el cuadro estático.
         console.log('[confirmSignatureBoxPlacement] activeSignatureBoxInfo establecido:', activeSignatureBoxInfo);
         console.log('[confirmSignatureBoxPlacement] signatureBoxEl (ahora es el cuadro confirmado/estático) es:', signatureBoxEl);
 
-        repositionActiveSignatureBox(); // Reposiciona el cuadro ahora confirmado usando sus nuevas coords PDF
+        repositionActiveSignatureBox(); 
        
         let controls = boxEl.querySelector('.signature-box-controls');
         if (!controls) { 
@@ -1246,15 +1230,12 @@
             console.warn('[makeSignatureBoxEditable] boxEl es null, no se puede hacer editable.');
             return;
         }
-        // Cuando se edita un cuadro confirmado, activeSignatureBoxInfo se anula porque sus datos ya no son válidos
-        // hasta que se reconfirme. El cuadro vuelve a ser el "azul".
         activeSignatureBoxInfo = null; 
         boxEl.classList.remove('position-confirmed'); 
         boxEl.style.cursor = 'move'; 
         boxEl.querySelectorAll('.resize-handle').forEach(h => h.remove()); 
         addResizeHandlesToSigBox(boxEl); 
        
-        // signatureBoxEl es boxEl, que ahora es azul y editable.
         console.log('[makeSignatureBoxEditable] signatureBoxEl (ahora azul) es:', signatureBoxEl);
 
         let controls = boxEl.querySelector('.signature-box-controls');
@@ -1280,23 +1261,14 @@
             console.log('[makeSignatureBoxEditable > cancelBtn] Removiendo cuadro azul y anulando signatureBoxEl.');
             boxEl.remove(); 
             signatureBoxEl = null; 
-            activeSignatureBoxInfo = null; // Ya era null, pero por si acaso.
+            activeSignatureBoxInfo = null; 
         };
         controls.appendChild(confirmPlacementBtn);
         controls.appendChild(cancelBtn);
         setupSigBoxDragEvents(boxEl); 
         console.log('[makeSignatureBoxEditable] Terminado. signatureBoxEl (debería ser azul y editable):', signatureBoxEl);
     }
-
-    // ... (resto de las funciones sin cambios relevantes para esta lógica específica)
-    // _onSigBoxDragMove, _onSigBoxDragEnd, _onSigBoxResizeMove, _onSigBoxResizeEnd
-    // addResizeHandlesToSigBox, initSigBoxResize, handleSigBoxResizeMove
-    // setupSigBoxDragEvents, handleSigBoxDragMove
-    // openSignatureModal, setupSignaturePadDrawingEventsEl, embedSignature
-    // repositionSignatures, adjustViewerHeightAndRender
-    // displayMarkerForUserB, openSignatureModalForUserB, saveUserBSignatureToSupabase, checkSignaturesStatus
-    // listeners de mouse/touch y load/resize
-
+    
     const _onSigBoxDragMove = (e) => { 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1438,10 +1410,7 @@
     }
 
     function openSignatureModal() { 
-      // Esta función es para que el Usuario A firme en un cuadro ya confirmado.
-      // Necesita activeSignatureBoxInfo.
       if (!activeSignatureBoxInfo) {
-          // Si hay un signatureBoxEl azul, no se puede abrir este modal.
           if (signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed')) {
               showMessage("Primero debe confirmar la posición del cuadro de firma (botón ✔️ del cuadro azul) antes de poder dibujar en él.");
           } else {
@@ -1449,7 +1418,6 @@
           }
           return;
       }
-      // El resto de la lógica del modal de firma para Usuario A...
       signatureModalEl = document.createElement('div');
       signatureModalEl.className = 'signature-modal';
       const container = document.createElement('div');
@@ -1549,7 +1517,7 @@
       signaturePadCanvasEl.addEventListener('touchend', stopPadDraw);
     }
 
-    function embedSignature() { // Cuando Usuario A firma su propio cuadro
+    function embedSignature() { 
         const tempCanvasTest = document.createElement('canvas');
         tempCanvasTest.width = signaturePadCanvasEl.width; 
         tempCanvasTest.height = signaturePadCanvasEl.height;
@@ -1586,8 +1554,6 @@
             console.log('[embedSignature] Removiendo el cuadro de firma confirmado (era signatureBoxEl) y anulando signatureBoxEl.');
             activeSignatureBoxInfo.element.remove(); 
         }
-        // Después de que Usuario A firma en su cuadro, ese cuadro (signatureBoxEl) se reemplaza por la imagen.
-        // Ya no hay un signatureBoxEl interactivo en la página que corresponda a ESE proceso.
         signatureBoxEl = null; 
         activeSignatureBoxInfo = null; 
        
