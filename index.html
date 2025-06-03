@@ -505,7 +505,7 @@
     <script>
         // --- Configuración de Supabase ---
         const SUPABASE_URL = 'https://clkxkehypxmcqxcalmwn.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReFf_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReF_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
 
         let supabaseClient = null;
 
@@ -594,7 +594,7 @@
         let translatePos = { x: 0, y: 0 };
         let isZoomed = false;
 
-        let embeddedSignatures = [];
+        let embeddedSignatures = []; // Contiene las firmas incrustadas del Usuario A y B
         let signatureBoxEl = null; 
         let activeSignatureBoxInfo = null; 
         let isDraggingSigBox = false;
@@ -692,9 +692,16 @@
             if (!pdfDoc || rendering) return;
             rendering = true;
             
+            // Ocultar el área de firma de Usuario B si existe y no estamos en la página correcta
             const userBArea = document.getElementById('user-b-sig-area');
-            if(userBArea) userBArea.style.display = 'none'; 
-
+            if(userBArea) {
+                if (markerDataForUserB && markerDataForUserB.page === num) {
+                    userBArea.style.display = 'flex'; // Mostrar si estamos en la página de su marcador
+                } else {
+                    userBArea.style.display = 'none'; // Ocultar si no estamos en la página de su marcador
+                }
+            }
+            
             updatePageUsageCounters(); 
             
             try {
@@ -899,8 +906,8 @@
                 expectedCanvasTop = (viewerRect.height - newViewportCss.height) / 2;
             }
             
-            translatePos.x = (screenCenterX - viewerRect.left - expectedCanvasLeft) - (pdfPointX * scale);
-            translatePos.y = (screenCenterY - viewerRect.top - expectedCanvasTop) - (pdfPointY * scale);
+            translatePos.x = (mouseXViewer - expectedCanvasLeft) - (pdfPointX * scale);
+            translatePos.y = (mouseYViewer - expectedCanvasTop) - (pdfPointY * scale);
             
             document.getElementById('zoom-slider').value = scale.toFixed(1);
             await renderPage(currentPage); 
@@ -969,6 +976,7 @@
                 
                 await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
                 
+                // Incluir firmas del Usuario A y B
                 const signaturesForPage = embeddedSignatures.filter(sig => sig.page === i);
                 for (const sigInfo of signaturesForPage) {
                     const img = new Image();
@@ -983,6 +991,7 @@
                             };
                             img.src = sigInfo.dataURL;
                         });
+                        // Coordenadas de la firma en la página (ya están en unidades PDF con el escalado original)
                         const x = sigInfo.x * downloadScale;
                         const y = sigInfo.y * downloadScale;
                         const width = sigInfo.width * downloadScale;
@@ -1073,7 +1082,7 @@
                 if (!signatureBoxEl) {
                     reason = "No hay ningún cuadro de firma en la página. Debe añadir uno (✍️) y luego confirmarlo (✔️).";
                 } else if (!signatureBoxEl.classList.contains('position-confirmed')) {
-                    reason = "El cuadro de firma actual es azul (editable). Primero debe confirmarlo (con ✔️) para que se vuelva estático y pueda ser compartido.";
+                    reason = "El cuadro de firma actual es azul (editable). Primero debe confirmarlo (con ✔️) para que se vuelva de borde discontinuo y pueda ser compartido.";
                 } else if (!activeSignatureBoxInfo || activeSignatureBoxInfo.element !== signatureBoxEl) {
                     reason = "El cuadro de firma está confirmado, pero hay una inconsistencia con sus datos internos. Intente editarlo (✏️) y confirmarlo (✔️) de nuevo.";
                 } else { 
@@ -1085,12 +1094,12 @@
                 }
                 
                 console.error("SharePDF: FALLO AL PREPARAR MARCADOR. Razón: " + reason, 
-                              "signatureBoxEl:", signatureBoxEl, 
-                              "activeSignatureBoxInfo:", activeSignatureBoxInfo);
+                                 "signatureBoxEl:", signatureBoxEl, 
+                                 "activeSignatureBoxInfo:", activeSignatureBoxInfo);
                 
                 showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma' (aparece cuadro azul).\n2. Posiciona y dimensiona el cuadro azul.\n3. Haz clic en ✔️ sobre el cuadro azul para confirmarlo (se volverá de borde discontinuo).\n4. SOLO ENTONCES, presiona '📤 Compartir'.\n\n" +
-                                "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
-                                "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
+                                     "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
+                                     "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
                 return;
             }
             
@@ -1178,16 +1187,16 @@
                 
                 if (error && error.message && (error.message.includes("guardar marcador") || error.message.includes("signature_markers") || error.message.includes("No message property"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL GUARDAR MARCADOR:\n" +
-                                        "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
-                                        "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
-                                        "   Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
-                                        "3. Problema de conexión o con el servicio de Supabase.\n\n" +
-                                        "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
+                                         "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
+                                         "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
+                                         "    Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
+                                         "3. Problema de conexión o con el servicio de Supabase.\n\n" +
+                                         "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
                 } else if (error && error.message && (error.message.includes("subir PDF original") || error.message.includes("Storage"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL SUBIR PDF:\n" +
-                                        "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
-                                        "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
-                                        "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
+                                         "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
+                                         "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
+                                         "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
                 }
                 showMessage(userMessage);
             }
@@ -1199,6 +1208,13 @@
                 showMessage("Por favor, carga un documento PDF primero.");
                 return;
             }
+            // Asegúrate de que el cuadro de usuario B no esté activo si Usuario A intenta añadir su firma
+            const userBArea = document.getElementById('user-b-sig-area');
+            if (userBArea) {
+                userBArea.remove(); // Eliminar el marcador de Usuario B si existe
+                markerDataForUserB = null; // Limpiar los datos del marcador de Usuario B
+            }
+
             if (signatureBoxEl) { 
                 console.log('[addSignatureBox] Hay un signatureBoxEl existente, se removerá.');
                 try {
@@ -1285,8 +1301,8 @@
                 page: currentPage,
                 x: boxRelToCanvasX, 
                 y: boxRelToCanvasY, 
-                width: pdfWidth,  
-                height: pdfHeight  
+                width: pdfWidth, 
+                height: pdfHeight 
             };
             console.log('[confirmSignatureBoxPlacement] activeSignatureBoxInfo establecido:', activeSignatureBoxInfo);
             console.log('[confirmSignatureBoxPlacement] signatureBoxEl (ahora es el cuadro confirmado/estático) es:', signatureBoxEl);
@@ -1623,13 +1639,16 @@
             signaturePadCanvasEl.addEventListener('touchend', stopPadDraw);
         }
 
-        function embedSignature() { 
+        function embedSignature(isUserBSignature = false, markerInfo = null) { 
             const tempCanvasTest = document.createElement('canvas');
             tempCanvasTest.width = signaturePadCanvasEl.width; 
             tempCanvasTest.height = signaturePadCanvasEl.height;
             const blankDataURL = tempCanvasTest.toDataURL();
             
-            if (!activeSignatureBoxInfo) { 
+            // Si es firma de Usuario B, usamos el markerInfo, de lo contrario, activeSignatureBoxInfo
+            const targetInfo = isUserBSignature ? markerInfo : activeSignatureBoxInfo;
+
+            if (!targetInfo) { 
                 showMessage("Error: No hay información del cuadro de firma activo para incrustar la firma.");
                 if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
                 return;
@@ -1646,22 +1665,29 @@
             
             const signatureInfo = {
                 element: signatureImgElement, 
-                page: activeSignatureBoxInfo.page,     
-                x: activeSignatureBoxInfo.x, 
-                y: activeSignatureBoxInfo.y, 
-                width: activeSignatureBoxInfo.width, 
-                height: activeSignatureBoxInfo.height, 
-                dataURL: dataURL     
+                page: targetInfo.page,       
+                x: targetInfo.x_coord || targetInfo.x, // Usar x_coord/y_coord si es de marker, x/y si es de activeSignatureBoxInfo
+                y: targetInfo.y_coord || targetInfo.y,       
+                width: targetInfo.width_val || targetInfo.width, 
+                height: targetInfo.height_val || targetInfo.height, 
+                dataURL: dataURL,      
+                // Añadir una referencia al ID del marcador si es una firma de Usuario B
+                marker_id_ref: isUserBSignature ? targetInfo.marker_id : undefined
             };
             embeddedSignatures.push(signatureInfo); 
             pdfViewer.appendChild(signatureImgElement); 
             
-            if(activeSignatureBoxInfo.element) { 
+            if (!isUserBSignature && activeSignatureBoxInfo.element) { // Solo si es firma de Usuario A, remover el cuadro azul
                 console.log('[embedSignature] Removiendo el cuadro de firma confirmado (era signatureBoxEl) y anulando signatureBoxEl.');
                 activeSignatureBoxInfo.element.remove(); 
+                signatureBoxEl = null; 
+                activeSignatureBoxInfo = null; 
+            } else if (isUserBSignature) {
+                // Si es firma de Usuario B, remover el área del marcador de Usuario B
+                const userBArea = document.getElementById('user-b-sig-area');
+                if (userBArea) userBArea.remove();
+                markerDataForUserB = null; // Marcar como firmado para que no se re-muestre el área de clic
             }
-            signatureBoxEl = null; 
-            activeSignatureBoxInfo = null; 
             
             if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
             repositionSignatures(); 
@@ -1716,13 +1742,22 @@
         function displayMarkerForUserB(marker) {
             if (!pdfDoc || !marker || marker.page !== currentPage || rendering) return;
 
-            const existingUserBArea = document.getElementById('user-b-sig-area');
-            if (existingUserBArea) existingUserBArea.remove();
+            // No mostrar el marcador de Usuario B si ya tenemos una firma incrustada para él
+            const isMarkerAlreadySignedLocally = embeddedSignatures.some(sig => sig.marker_id_ref === marker.marker_id);
+            if (isMarkerAlreadySignedLocally) {
+                const existingUserBArea = document.getElementById('user-b-sig-area');
+                if (existingUserBArea) existingUserBArea.remove();
+                return;
+            }
 
-            const userBSignatureAreaEl = document.createElement('div');
-            userBSignatureAreaEl.id = 'user-b-sig-area';
-            userBSignatureAreaEl.className = 'user-b-signature-area';
-            userBSignatureAreaEl.innerHTML = '<span>Haz clic aquí para firmar</span>';
+            let userBSignatureAreaEl = document.getElementById('user-b-sig-area');
+            if (!userBSignatureAreaEl) {
+                userBSignatureAreaEl = document.createElement('div');
+                userBSignatureAreaEl.id = 'user-b-sig-area';
+                userBSignatureAreaEl.className = 'user-b-signature-area';
+                userBSignatureAreaEl.innerHTML = '<span>Haz clic aquí para firmar</span>';
+                pdfViewer.appendChild(userBSignatureAreaEl);
+            }
             userBSignatureAreaEl.style.display = 'flex'; 
 
             const canvasRect = canvas.getBoundingClientRect();
@@ -1743,10 +1778,10 @@
             userBSignatureAreaEl.style.width = `${displayWidth}px`;
             userBSignatureAreaEl.style.height = `${displayHeight}px`;
 
+            // Establecer el evento de clic para abrir el modal de firma
             userBSignatureAreaEl.onclick = () => {
                 openSignatureModalForUserB(marker);
             };
-            pdfViewer.appendChild(userBSignatureAreaEl);
         }
 
         function openSignatureModalForUserB(markerToSign) {
@@ -1789,6 +1824,10 @@
                     showMessage("Por favor, dibuja una firma primero.");
                     return;
                 }
+                
+                // Antes de cerrar el modal, incrustar la firma localmente
+                embedSignature(true, markerToSign); // True para indicar que es de Usuario B
+                
                 if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
                 await saveUserBSignatureToSupabase(markerToSign, signatureDataURL);
             };
@@ -1854,18 +1893,13 @@
                 if (updateError) throw new Error(`Error al actualizar marcador: ${updateError.message}`);
 
                 showMessage("¡Firma enviada exitosamente!\nPuedes cerrar esta ventana.");
-                const placeholderArea = document.getElementById('user-b-sig-area');
-                if (placeholderArea) {
-                    placeholderArea.innerHTML = `<img src="${signatureDataURL}" style="width:100%; height:100%; object-fit:contain;" alt="Firma"/>`;
-                    placeholderArea.style.border = '1px solid green';
-                    placeholderArea.style.cursor = 'default';
-                    placeholderArea.onclick = null;
-                }
-                if (window.history.replaceState) {
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-
-                // NUEVA FUNCIONALIDAD: Habilitar botones de Guardar y Compartir para Usuario B
+                
+                // NOTA: La lógica de eliminar el área de marcador y agregar la imagen al DOM del visor
+                // se ha movido a `embedSignature(true, markerToSign)` para asegurar que se haga
+                // inmediatamente al confirmar la firma, antes de la subida a Supabase.
+                // Esto mejora la respuesta de la UI.
+                
+                // Habilitar botones de Guardar y Compartir para Usuario B
                 const savePdfBtn = document.getElementById('save-pdf-btn');
                 const sharePdfBtn = document.getElementById('share-pdf-btn');
                 if (savePdfBtn) savePdfBtn.style.display = 'inline-block';
@@ -1874,6 +1908,11 @@
                     sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Cambiar texto del botón
                     sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Nueva función para compartir
                     sharePdfBtn.style.display = 'inline-block';
+                }
+
+                // Limpiar la URL de la página si se está en el modo de firma de Usuario B
+                if (window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
 
             } catch (error) {
@@ -2012,7 +2051,7 @@
                             width: marker.width_val,
                             height: marker.height_val,
                             dataURL: signatureDataURL,
-                            marker_id_ref: marker.marker_id
+                            marker_id_ref: marker.marker_id // Guardar la referencia al marcador
                         };
                         embeddedSignatures.push(signatureInfo);
                         newSignaturesLoaded = true;
@@ -2119,6 +2158,7 @@
 
                     if (markerError) throw new Error(`Error obteniendo marcador: ${markerError.message}`);
                     
+                    // Buscar el marcador de firma para el usuario B (puede estar pendiente o ya firmado)
                     const targetMarker = markers ? markers.find(m => m.status === 'pending_user_b_signature' || m.status === 'signed_by_user_b') : null;
 
                     if (!targetMarker) {
@@ -2127,7 +2167,7 @@
                         return;
                     }
                     
-                    markerDataForUserB = targetMarker; 
+                    markerDataForUserB = targetMarker; // Guardar el marcador para futuras operaciones
                     let pdfPathInStorage = markerDataForUserB.pdf_storage_path;
 
                     if (!pdfPathInStorage) { 
@@ -2161,7 +2201,7 @@
                             const loadingTask = pdfjsLib.getDocument({ data: e_reader.target.result });
                             pdfDoc = await loadingTask.promise;
                             totalPages = pdfDoc.numPages;
-                            currentPage = markerDataForUserB.page; 
+                            currentPage = markerDataForUserB.page; // Ir directamente a la página donde se debe firmar
                             translatePos = { x: 0, y: 0 }; scale = 1;
                             document.getElementById('zoom-slider').value = scale;
                             document.getElementById('total-pages').textContent = totalPages;
@@ -2180,15 +2220,19 @@
                                 const { data: sigBlob, error: sigErr } = await supabaseClient.storage.from('pdfs').download(markerDataForUserB.signed_signature_storage_path);
                                 if (sigErr) throw new Error("Error descargando la firma existente: " + sigErr.message);
                                 const sigDataURL = await new Promise((resolve, reject) => {
-                                   const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
+                                       const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
                                 });
-                                const placeholderArea = document.getElementById('user-b-sig-area');
-                                if (placeholderArea) { 
-                                    placeholderArea.innerHTML = `<img src="${sigDataURL}" style="width:100%; height:100%; object-fit:contain;" alt="Firma"/>`;
-                                    placeholderArea.style.border = '1px solid green';
-                                    placeholderArea.style.cursor = 'default';
-                                    placeholderArea.onclick = null;
-                                }
+                                // Llamamos a embedSignature para que la firma existente se muestre en el visor
+                                embedSignature(true, { // Se pasa true para isUserBSignature y el markerData para las coordenadas
+                                    page: markerDataForUserB.page,
+                                    x_coord: markerDataForUserB.x_coord,
+                                    y_coord: markerDataForUserB.y_coord,
+                                    width_val: markerDataForUserB.width_val,
+                                    height_val: markerDataForUserB.height_val,
+                                    dataURL: sigDataURL,
+                                    marker_id: markerDataForUserB.marker_id // Necesario para la referencia
+                                });
+
                                 // Habilitar botones al cargar si ya está firmado
                                 const savePdfBtn = document.getElementById('save-pdf-btn');
                                 const sharePdfBtn = document.getElementById('share-pdf-btn');
@@ -2200,8 +2244,8 @@
                                 }
 
                             } else if (markerDataForUserB.status === 'pending_user_b_signature') {
-                                 showMessage("Documento cargado. Haz clic en el área indicada para firmar.");
-                            }
+                                    showMessage("Documento cargado. Haz clic en el área indicada para firmar.");
+                                }
                         } catch (pdfLoadError) {
                                console.error("Error procesando PDF para Usuario B:", pdfLoadError);
                                showMessage(`Error al procesar el PDF: ${pdfLoadError.message}`);
@@ -2215,9 +2259,9 @@
                     if (window.history.replaceState) { window.history.replaceState({}, document.title, window.location.pathname); }
                 }
             } else if (docIdFromUrl && mode === 'sign') { 
-                 console.log(`Modo Firmante (Antiguo): Cargar documento con ID: ${docIdFromUrl}`);
-                 showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto o no completamente funcional con las nuevas características.)`);
-                 document.getElementById('file-input').style.display = 'none';
+                console.log(`Modo Firmante (Antiguo): Cargar documento con ID: ${docIdFromUrl}`);
+                showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto o no completamente funcional con las nuevas características.)`);
+                document.getElementById('file-input').style.display = 'none';
             }
         });
         window.addEventListener('resize', adjustViewerHeightAndRender);
