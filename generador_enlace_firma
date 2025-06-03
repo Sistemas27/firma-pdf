@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compartir Enlace de Firma</title>
+    <title>Enlace de Firma Generado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { 
@@ -24,95 +24,78 @@
             padding: 25px 30px; 
             border-radius: 0.3rem; 
             box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15); 
-            max-width: 500px; 
+            max-width: 450px; 
             width: 100%;
         }
         h1 { 
             color: #343a40; 
             margin-top: 0;
-            margin-bottom: 25px; 
-            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
             font-weight: 500;
         }
         p { 
             color: #495057; 
-            margin-bottom: 15px; 
-            font-size: 0.95rem;
+            margin-bottom: 10px; 
+            font-size: 0.9rem;
         }
-        #qr-code-display { /* Contenedor del QR para centrar y estilizar */
-            margin: 25px auto;
+        #qr-code-display { /* Contenedor del QR */
+            margin: 15px auto;
             border: 1px solid #dee2e6;
-            padding: 10px;
+            padding: 8px; 
             background-color: #fff;
-            display: inline-block; /* Para que el borde se ajuste al contenido */
+            display: inline-block; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 166px; /* Para QR de 150px + padding */
+            height: 166px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        /* El div donde se genera el QR no necesita dimensiones fijas si la librería las maneja */
-
+        #qr-code-display img { /* Estilo para la imagen del QR */
+            max-width: 100%;
+            max-height: 100%;
+        }
         .url-section { 
-            margin-top: 25px; 
-            margin-bottom: 25px;
+            margin-top: 15px; 
+            margin-bottom: 15px;
         }
-        .url-section p {
-            margin-bottom: 8px;
+        .url-section p { /* "Enlace para firmar:" */
+            margin-bottom: 5px;
             font-weight: 500;
             color: #212529;
-        }
-        .url-container { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            width: 100%;
+            font-size: 0.85rem;
         }
         #shareable-url-input { 
-            padding: 0.5rem 0.75rem; 
+            padding: 0.4rem 0.6rem; 
             border: 1px solid #ced4da; 
             border-radius: 0.25rem; 
-            flex-grow: 1; 
-            font-size: 0.9rem; 
+            font-size: 0.85rem; 
             background-color: #f8f9fa;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 10px; /* Espacio antes del mensaje de estado */
         }
-        .action-button { 
-            padding: 0.5rem 1rem; 
-            background-color: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 0.25rem; 
-            cursor: pointer; 
-            font-size: 0.9rem;
-            transition: background-color 0.2s ease;
-        }
-        .action-button:hover { 
-            background-color: #0056b3; 
-        }
-        .back-button {
+        #status-message {
             margin-top: 15px;
-            background-color: #6c757d;
-        }
-        .back-button:hover {
-            background-color: #5a6268;
+            font-weight: bold;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Compartir Documento para Firma</h1>
-        <p>El Usuario B puede acceder al documento para firmarlo usando el siguiente enlace o escaneando el código QR.</p>
-        
+        <h1>Enlace y QR para Compartir</h1>
         <div id="qr-code-display-container">
-            <p id="qr-message">Generando código QR...</p>
-            <div id="qr-code-display"></div>
-        </div>
+            <p id="qr-message" style="font-size:0.85rem; margin-bottom:5px;">Generando código QR...</p>
+            <div id="qr-code-display"></div> </div>
 
         <div class="url-section">
-            <p>Enlace para compartir:</p>
-            <div class="url-container">
-                <input type="text" id="shareable-url-input" readonly>
-                <button id="copy-url-btn" class="action-button">Copiar</button>
-            </div>
+            <p>Enlace para firmar:</p>
+            <input type="text" id="shareable-url-input" readonly title="URL para compartir">
         </div>
-        
-        <button id="back-to-main-btn" class="action-button back-button">Volver al Editor</button>
+        <p id="status-message">Preparando...</p>
     </div>
 
     <script>
@@ -123,71 +106,78 @@
 
         window.onload = function() {
             const signUrl = getQueryParam('signUrl');
-            // const docId = getQueryParam('docId'); // Opcional, si lo necesitas mostrar aquí
-            
             const qrCodeDisplayElement = document.getElementById('qr-code-display');
             const shareableUrlInputElement = document.getElementById('shareable-url-input');
             const qrMessageElement = document.getElementById('qr-message');
+            const statusMessageElement = document.getElementById('status-message');
+            
+            // Tiempo en milisegundos antes de intentar cerrar la ventana
+            const autoCloseDelay = 7000; // 7 segundos (puedes ajustarlo)
 
             if (signUrl) {
                 shareableUrlInputElement.value = signUrl;
-                qrMessageElement.style.display = 'none'; // Ocultar mensaje de "Generando..."
+                qrMessageElement.style.display = 'none'; 
                 
                 // Generar QR
                 new QRCode(qrCodeDisplayElement, {
                     text: signUrl,
-                    width: 200, // Ajusta el tamaño según necesites
-                    height: 200,
+                    width: 150, // Tamaño del QR
+                    height: 150,
                     colorDark : "#000000",
                     colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H // Nivel de corrección de errores
+                    correctLevel : QRCode.CorrectLevel.H 
                 });
-            } else {
-                qrMessageElement.textContent = 'Error: No se proporcionó URL para generar el enlace y QR.';
-                qrMessageElement.style.color = 'red';
-                shareableUrlInputElement.value = "Error: URL no disponible.";
-                document.getElementById('copy-url-btn').disabled = true;
-            }
 
-            const copyBtn = document.getElementById('copy-url-btn');
-            copyBtn.onclick = () => {
-                if (!signUrl) return;
+                // Intentar copiar al portapapeles automáticamente
                 shareableUrlInputElement.select();
-                shareableUrlInputElement.setSelectionRange(0, 99999); // Para móviles
+                shareableUrlInputElement.setSelectionRange(0, 99999); 
+                let copyAttemptMessage = "Puedes copiar el enlace manualmente.";
+
                 try {
                     if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(signUrl).then(() => {
-                            copyBtn.textContent = '¡Copiado!';
-                            setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
-                        }).catch(err => { // Fallback si falla navigator.clipboard
-                            console.warn('navigator.clipboard.writeText falló, intentando execCommand:', err);
-                            if (!document.execCommand('copy')) throw new Error('execCommand no soportado/falló');
-                            copyBtn.textContent = '¡Copiado!';
-                            setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
-                        });
-                    } else { // Fallback para contextos no seguros o navegadores antiguos
-                         if (!document.execCommand('copy')) throw new Error('execCommand no soportado/falló');
-                        copyBtn.textContent = '¡Copiado!';
-                        setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                        navigator.clipboard.writeText(signUrl)
+                            .then(() => {
+                                console.log('URL copiada al portapapeles.');
+                                copyAttemptMessage = '¡Enlace copiado al portapapeles!';
+                                statusMessageElement.textContent = copyAttemptMessage + ' Esta ventana se cerrará en ' + (autoCloseDelay/1000) + 's.';
+                                statusMessageElement.style.color = '#28a745'; // Verde para éxito
+                            })
+                            .catch(err => {
+                                console.warn('Fallo al copiar con navigator.clipboard:', err);
+                                if (document.execCommand('copy')) { // Intenta con el método antiguo
+                                    copyAttemptMessage = '¡Enlace copiado al portapapeles (método alterno)!';
+                                    statusMessageElement.style.color = '#28a745';
+                                } else {
+                                     statusMessageElement.style.color = '#ffc107'; // Amarillo si falla el alterno también
+                                }
+                                statusMessageElement.textContent = copyAttemptMessage + ' Esta ventana se cerrará en ' + (autoCloseDelay/1000) + 's.';
+                            });
+                    } else if (document.execCommand('copy')) { // Fallback para contextos no seguros o navegadores antiguos
+                        copyAttemptMessage = '¡Enlace copiado al portapapeles (método alterno)!';
+                        statusMessageElement.textContent = copyAttemptMessage + ' Esta ventana se cerrará en ' + (autoCloseDelay/1000) + 's.';
+                        statusMessageElement.style.color = '#28a745'; 
+                    } else {
+                         statusMessageElement.textContent = copyAttemptMessage + ' Esta ventana se cerrará en ' + (autoCloseDelay/1000) + 's.';
+                         statusMessageElement.style.color = '#ffc107'; 
                     }
                 } catch (err) {
-                    console.error('Error al copiar URL:', err);
-                    alert('Error al copiar. Por favor, copia manualmente.');
+                    console.error('Error general al intentar copiar:', err);
+                    statusMessageElement.textContent = copyAttemptMessage + ' Esta ventana se cerrará en ' + (autoCloseDelay/1000) + 's.';
+                    statusMessageElement.style.color = '#dc3545'; // Rojo para error
                 }
-            };
+                
+                // Programar el cierre de la ventana
+                setTimeout(() => {
+                    window.close();
+                }, autoCloseDelay);
 
-            document.getElementById('back-to-main-btn').onclick = function() {
-                // Intenta volver a la página anterior en el historial
-                // Si no hay historial (ej. enlace directo), redirige a la página principal.
-                // Asume que tu página principal es 'index.html' o el nombre de tu archivo original.
-                // Ajusta 'firmar.html' si tu archivo principal se llama diferente.
-                let mainPagePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'firmar.html';
-                if (document.referrer && document.referrer !== window.location.href) {
-                     window.history.back();
-                } else {
-                    window.location.href = mainPagePath;
-                }
-            };
+            } else {
+                qrMessageElement.textContent = 'Error: No se proporcionó URL.';
+                qrMessageElement.style.color = 'red';
+                shareableUrlInputElement.value = "Error: URL no disponible.";
+                statusMessageElement.textContent = 'Error al cargar. Por favor, cierra esta ventana manualmente.';
+                statusMessageElement.style.color = '#dc3545';
+            }
         };
     </script>
 </body>
