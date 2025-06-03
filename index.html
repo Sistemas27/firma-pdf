@@ -2186,7 +2186,8 @@
                             }
                         } else if (status === 'CHANNEL_ERROR') {
                             console.error('Realtime: Error en el canal:', err);
-                            showMessage(`Error en la conexión en tiempo real: ${err.message}. Intenta refrescar.`);
+                            // !!! AQUÍ ESTÁ LA LÍNEA MODIFICADA !!!
+                            showMessage(`Error en la conexión en tiempo real: ${err ? err.message : 'Error desconocido de canal'}. Intenta refrescar.`);
                         } else if (status === 'CLOSED') {
                             console.log('Realtime: Canal cerrado.');
                         } else {
