@@ -495,7 +495,7 @@
     <div id="pdf-viewer">
         <canvas id="pdf-canvas"></canvas>
         <div id="current-page-visits" class="page-usage-counter" title="Visitas a esta página">P: 0</div>
-        <div id="total-page-views" class="page-usage-counter" title="Total vistas de página">T: 0</div>
+        <div id="total-page-views" class="page-usage-counter" title="T: 0</div>
     </div>
 
     <div id="zoom-slider-container">
@@ -1342,13 +1342,13 @@
             const editPosBtn = document.createElement('button');
             editPosBtn.className = 'signature-box-btn edit';
             editPosBtn.innerHTML = '✏️'; 
-            editPosBtn.title = 'Editar Posición';
+            drawBtn.title = 'Editar Posición';
             editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); }; 
             
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'signature-box-btn cancel';
             cancelBtn.innerHTML = '❌'; 
-            cancelBtn.title = 'Cancelar/Eliminar esta área de firma';
+            drawBtn.title = 'Cancelar/Eliminar esta área de firma';
             cancelBtn.onclick = (e) => { 
                 e.stopPropagation(); 
                 console.log('[confirmSignatureBoxPlacement > cancelBtn] Removiendo cuadro confirmado y anulando signatureBoxEl.');
@@ -1386,13 +1386,13 @@
             const confirmPlacementBtn = document.createElement('button');
             confirmPlacementBtn.className = 'signature-box-btn confirm';
             confirmPlacementBtn.innerHTML = '✔️'; 
-            confirmPlacementBtn.title = 'Confirmar Posición';
+            drawBtn.title = 'Confirmar Posición';
             confirmPlacementBtn.onclick = (e) => { e.stopPropagation(); confirmSignatureBoxPlacement(boxEl); };
             
             const cancelBtn = document.createElement('button'); 
             cancelBtn.className = 'signature-box-btn cancel';
             cancelBtn.innerHTML = '🗑️'; 
-            cancelBtn.title = 'Eliminar este cuadro azul';
+            drawBtn.title = 'Eliminar este cuadro azul';
             cancelBtn.onclick = (e) => { 
                 e.stopPropagation(); 
                 console.log('[makeSignatureBoxEditable > cancelBtn] Removiendo cuadro azul y anulando signatureBoxEl.');
@@ -1920,19 +1920,21 @@
                 // inmediatamente al confirmar la firma, antes de la subida a Supabase.
                 // Esto mejora la respuesta de la UI.
                 
-                // Habilitar botones de Guardar y Compartir para Usuario B, y que ambos suban a Supabase
+                // Habilitar botones de Guardar y Compartir para Usuario B
                 const savePdfBtn = document.getElementById('save-pdf-btn');
                 const sharePdfBtn = document.getElementById('share-pdf-btn');
                 
-                // Para Usuario B, "Guardar" y "Compartir" ahora hacen lo mismo: subir el PDF final.
+                // *** ¡AQUÍ ESTÁ EL CAMBIO PARA EL USUARIO B! ***
+                // Ahora, el botón "Guardar PDF Final" llama a downloadPDF()
                 if (savePdfBtn) {
                     savePdfBtn.style.display = 'inline-block';
-                    savePdfBtn.textContent = '💾 Guardar PDF Final'; // Cambiar texto para claridad
-                    savePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Llama a la función de subida a Supabase
+                    savePdfBtn.textContent = '💾 Descargar PDF Final'; // Cambiar texto
+                    savePdfBtn.onclick = downloadPDF; // Llama a la función de descarga local
                 }
+                // El botón "Compartir PDF Final" SIEMPRE sube a Supabase
                 if (sharePdfBtn) {
-                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Cambiar texto del botón
-                    sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Misma función de subida
+                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; 
+                    sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName);
                     sharePdfBtn.style.display = 'inline-block';
                 }
 
@@ -1947,10 +1949,10 @@
             }
         }
 
-        // Esta función ahora también es usada por el botón "Guardar" del Usuario B
+        // Esta función SIEMPRE sube a Supabase, NO se usará para la descarga local del botón "Guardar"
         async function shareSignedPdfByB(docId, fileName) {
             if (!pdfDoc || !supabaseClient) {
-                showMessage("Error: Documento o cliente Supabase no disponibles para compartir/guardar.");
+                showMessage("Error: Documento o cliente Supabase no disponibles para compartir/subir.");
                 return;
             }
             showMessage("Preparando PDF firmado para subir...");
@@ -1963,7 +1965,7 @@
                 }
 
                 const signedFileName = fileName.replace(/\.pdf$/i, '-firmado-final.pdf');
-                const storagePath = `signed_documents/${docId}/${signedFileName}`; // Nueva carpeta para PDFs finales
+                const storagePath = `signed_documents/${docId}/${signedFileName}`; // Carpeta para PDFs finales en Supabase
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
                     .from('pdfs')
@@ -2332,13 +2334,13 @@
                                 const sharePdfBtn = document.getElementById('share-pdf-btn');
                                 if (savePdfBtn) {
                                     savePdfBtn.style.display = 'inline-block';
-                                    savePdfBtn.textContent = '💾 Guardar PDF Final';
-                                    savePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
+                                    savePdfBtn.textContent = '💾 Descargar PDF Final'; // Texto para descarga local
+                                    savePdfBtn.onclick = downloadPDF; // Llama a la función de descarga local
                                 }
                                 if (sharePdfBtn) {
-                                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; 
-                                    sharePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
                                     sharePdfBtn.style.display = 'inline-block';
+                                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Sigue siendo la subida a Supabase
+                                    sharePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
                                 }
 
                             } else if (markerDataForUserB.status === 'pending_user_b_signature') {
@@ -2357,7 +2359,7 @@
                     if (window.history.replaceState) { window.history.replaceState({}, document.title, window.location.pathname); }
                 }
             } else if (docIdFromUrl && mode === 'sign') { 
-                console.log(`Modo Firmante (Antiguo): Cargar documento con ID: ${docIdFromUrl}`);
+                console.log(`Modo Firmante (Antiguo): Cargando documento con ID: ${docIdFromUrl}`);
                 showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto o no completamente funcional con las nuevas características.)`);
                 document.getElementById('file-input').style.display = 'none';
             }
