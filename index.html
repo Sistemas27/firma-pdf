@@ -505,7 +505,7 @@
     <script>
         // --- Configuración de Supabase ---
         const SUPABASE_URL = 'https://clkxkehypxmcqxcalmwn.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReF_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa3hrZWh5cHhtY3F4Y2FsbXduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzgxMjIsImV4cCI6MjA2Mzk1NDEyMn0.eINgBpLReFf_PJmdsM2SVSD9QmuGs4FJe6jcJkp9wCg';
 
         let supabaseClient = null;
 
@@ -558,7 +558,11 @@
         
         try {
             if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    global: {
+                        fetch: fetch // Esto ayuda con problemas de CORS en entornos locales.
+                    }
+                });
                 console.info("Cliente de Supabase inicializado correctamente.");
             } else {
                 const placeholderErrorMsg = "Configuración Incompleta: Supabase URL o Anon Key son incorrectas.\n\nLa función de compartir no funcionará.";
@@ -1087,19 +1091,19 @@
                     reason = "El cuadro de firma está confirmado, pero hay una inconsistencia con sus datos internos. Intente editarlo (✏️) y confirmarlo (✔️) de nuevo.";
                 } else { 
                     if (activeSignatureBoxInfo && (activeSignatureBoxInfo.page < 1 || activeSignatureBoxInfo.page > totalPages)) {
-                            reason = "La página registrada para el cuadro de firma confirmado es inválida.";
+                                reason = "La página registrada para el cuadro de firma confirmado es inválida.";
                     } else {
-                            reason = "No se pudo preparar el cuadro de firma confirmado para compartir por una razón desconocida.";
+                                reason = "No se pudo preparar el cuadro de firma confirmado para compartir por una razón desconocida.";
                     }
                 }
                 
                 console.error("SharePDF: FALLO AL PREPARAR MARCADOR. Razón: " + reason, 
-                                 "signatureBoxEl:", signatureBoxEl, 
-                                 "activeSignatureBoxInfo:", activeSignatureBoxInfo);
+                                "signatureBoxEl:", signatureBoxEl, 
+                                "activeSignatureBoxInfo:", activeSignatureBoxInfo);
                 
                 showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma' (aparece cuadro azul).\n2. Posiciona y dimensiona el cuadro azul.\n3. Haz clic en ✔️ sobre el cuadro azul para confirmarlo (se volverá de borde discontinuo).\n4. SOLO ENTONCES, presiona '📤 Compartir'.\n\n" +
-                                     "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
-                                     "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
+                                    "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
+                                    "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
                 return;
             }
             
@@ -1187,16 +1191,16 @@
                 
                 if (error && error.message && (error.message.includes("guardar marcador") || error.message.includes("signature_markers") || error.message.includes("No message property"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL GUARDAR MARCADOR:\n" +
-                                         "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
-                                         "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
-                                         "    Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
-                                         "3. Problema de conexión o con el servicio de Supabase.\n\n" +
-                                         "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
+                                        "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
+                                        "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
+                                        "    Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
+                                        "3. Problema de conexión o con el servicio de Supabase.\n\n" +
+                                        "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
                 } else if (error && error.message && (error.message.includes("subir PDF original") || error.message.includes("Storage"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL SUBIR PDF:\n" +
-                                         "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
-                                         "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
-                                         "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
+                                        "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
+                                        "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
+                                        "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
                 }
                 showMessage(userMessage);
             }
@@ -1665,12 +1669,12 @@
             
             const signatureInfo = {
                 element: signatureImgElement, 
-                page: targetInfo.page,       
+                page: targetInfo.page, 
                 x: targetInfo.x_coord || targetInfo.x, // Usar x_coord/y_coord si es de marker, x/y si es de activeSignatureBoxInfo
-                y: targetInfo.y_coord || targetInfo.y,       
+                y: targetInfo.y_coord || targetInfo.y, 
                 width: targetInfo.width_val || targetInfo.width, 
                 height: targetInfo.height_val || targetInfo.height, 
-                dataURL: dataURL,      
+                dataURL: dataURL, 
                 // Añadir una referencia al ID del marcador si es una firma de Usuario B
                 marker_id_ref: isUserBSignature ? targetInfo.marker_id : undefined
             };
@@ -1954,7 +1958,6 @@
 
                 // Opcional: Actualizar el marcador en DB para registrar el PDF final
                 // Esto podría hacerse si quieres un registro de la versión final en la tabla signature_markers
-                // Por ejemplo, añadiendo una columna 'final_pdf_path' y actualizándola aquí.
                 // Por ahora, solo subimos el archivo.
 
                 // Generar URL para compartir el PDF final
@@ -2220,7 +2223,7 @@
                                 const { data: sigBlob, error: sigErr } = await supabaseClient.storage.from('pdfs').download(markerDataForUserB.signed_signature_storage_path);
                                 if (sigErr) throw new Error("Error descargando la firma existente: " + sigErr.message);
                                 const sigDataURL = await new Promise((resolve, reject) => {
-                                       const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
+                                        const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
                                 });
                                 // Llamamos a embedSignature para que la firma existente se muestre en el visor
                                 embedSignature(true, { // Se pasa true para isUserBSignature y el markerData para las coordenadas
