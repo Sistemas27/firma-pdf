@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compartir Enlace de Firma</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            background-color: #e9ecef; 
+            padding: 20px; 
+            box-sizing: border-box; 
+            text-align: center;
+        }
+        .container { 
+            background-color: #ffffff; 
+            padding: 25px 30px; 
+            border-radius: 0.3rem; 
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15); 
+            max-width: 500px; 
+            width: 100%;
+        }
+        h1 { 
+            color: #343a40; 
+            margin-top: 0;
+            margin-bottom: 25px; 
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+        p { 
+            color: #495057; 
+            margin-bottom: 15px; 
+            font-size: 0.95rem;
+        }
+        #qr-code-display { /* Contenedor del QR para centrar y estilizar */
+            margin: 25px auto;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            background-color: #fff;
+            display: inline-block; /* Para que el borde se ajuste al contenido */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        /* El div donde se genera el QR no necesita dimensiones fijas si la librería las maneja */
+
+        .url-section { 
+            margin-top: 25px; 
+            margin-bottom: 25px;
+        }
+        .url-section p {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #212529;
+        }
+        .url-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            width: 100%;
+        }
+        #shareable-url-input { 
+            padding: 0.5rem 0.75rem; 
+            border: 1px solid #ced4da; 
+            border-radius: 0.25rem; 
+            flex-grow: 1; 
+            font-size: 0.9rem; 
+            background-color: #f8f9fa;
+        }
+        .action-button { 
+            padding: 0.5rem 1rem; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 0.25rem; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease;
+        }
+        .action-button:hover { 
+            background-color: #0056b3; 
+        }
+        .back-button {
+            margin-top: 15px;
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Compartir Documento para Firma</h1>
+        <p>El Usuario B puede acceder al documento para firmarlo usando el siguiente enlace o escaneando el código QR.</p>
+        
+        <div id="qr-code-display-container">
+            <p id="qr-message">Generando código QR...</p>
+            <div id="qr-code-display"></div>
+        </div>
+
+        <div class="url-section">
+            <p>Enlace para compartir:</p>
+            <div class="url-container">
+                <input type="text" id="shareable-url-input" readonly>
+                <button id="copy-url-btn" class="action-button">Copiar</button>
+            </div>
+        </div>
+        
+        <button id="back-to-main-btn" class="action-button back-button">Volver al Editor</button>
+    </div>
+
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        window.onload = function() {
+            const signUrl = getQueryParam('signUrl');
+            // const docId = getQueryParam('docId'); // Opcional, si lo necesitas mostrar aquí
+            
+            const qrCodeDisplayElement = document.getElementById('qr-code-display');
+            const shareableUrlInputElement = document.getElementById('shareable-url-input');
+            const qrMessageElement = document.getElementById('qr-message');
+
+            if (signUrl) {
+                shareableUrlInputElement.value = signUrl;
+                qrMessageElement.style.display = 'none'; // Ocultar mensaje de "Generando..."
+                
+                // Generar QR
+                new QRCode(qrCodeDisplayElement, {
+                    text: signUrl,
+                    width: 200, // Ajusta el tamaño según necesites
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H // Nivel de corrección de errores
+                });
+            } else {
+                qrMessageElement.textContent = 'Error: No se proporcionó URL para generar el enlace y QR.';
+                qrMessageElement.style.color = 'red';
+                shareableUrlInputElement.value = "Error: URL no disponible.";
+                document.getElementById('copy-url-btn').disabled = true;
+            }
+
+            const copyBtn = document.getElementById('copy-url-btn');
+            copyBtn.onclick = () => {
+                if (!signUrl) return;
+                shareableUrlInputElement.select();
+                shareableUrlInputElement.setSelectionRange(0, 99999); // Para móviles
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(signUrl).then(() => {
+                            copyBtn.textContent = '¡Copiado!';
+                            setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                        }).catch(err => { // Fallback si falla navigator.clipboard
+                            console.warn('navigator.clipboard.writeText falló, intentando execCommand:', err);
+                            if (!document.execCommand('copy')) throw new Error('execCommand no soportado/falló');
+                            copyBtn.textContent = '¡Copiado!';
+                            setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                        });
+                    } else { // Fallback para contextos no seguros o navegadores antiguos
+                         if (!document.execCommand('copy')) throw new Error('execCommand no soportado/falló');
+                        copyBtn.textContent = '¡Copiado!';
+                        setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Error al copiar URL:', err);
+                    alert('Error al copiar. Por favor, copia manualmente.');
+                }
+            };
+
+            document.getElementById('back-to-main-btn').onclick = function() {
+                // Intenta volver a la página anterior en el historial
+                // Si no hay historial (ej. enlace directo), redirige a la página principal.
+                // Asume que tu página principal es 'index.html' o el nombre de tu archivo original.
+                // Ajusta 'firmar.html' si tu archivo principal se llama diferente.
+                let mainPagePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'firmar.html';
+                if (document.referrer && document.referrer !== window.location.href) {
+                     window.history.back();
+                } else {
+                    window.location.href = mainPagePath;
+                }
+            };
+        };
+    </script>
+</body>
+</html>
