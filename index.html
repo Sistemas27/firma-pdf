@@ -9,6 +9,83 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ... (Tu CSS completo aquí, no lo modifico) ... */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #e9ecef;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 0.3rem;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+            max-width: 450px;
+            width: 100%;
+        }
+        h1 {
+            color: #343a40;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        p {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        #qr-code-display { /* Contenedor del QR */
+            margin: 15px auto;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            background-color: #fff;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 166px; /* Para QR de 150px + padding */
+            height: 166px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #qr-code-display img { /* Estilo para la imagen del QR */
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .url-section {
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .url-section p { /* "Enlace para firmar:" */
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #212529;
+            font-size: 0.85rem;
+        }
+        #shareable-url-input {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            background-color: #f8f9fa;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 10px; /* Espacio antes del mensaje de estado */
+        }
+        #status-message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        /* Aquí empieza el CSS del segundo script */
         * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -410,8 +487,7 @@
         <div id="toolbar">
             <input type="file" id="file-input" accept="application/pdf" />
             <button class="toolbar-btn" onclick="addSignatureBox()">✍️ Añadir Firma</button>
-            <button class="toolbar-btn" onclick="downloadPDF()">📂 Guardar</button>
-            <button class="toolbar-btn" id="share-pdf-btn" onclick="sharePDF()">📤 Compartir</button>
+            <button class="toolbar-btn" id="save-pdf-btn" onclick="downloadPDF()">📂 Guardar</button> <button class="toolbar-btn" id="share-pdf-btn" onclick="sharePDF()">📤 Compartir</button>
             <button class="toolbar-btn" id="check-signatures-btn" onclick="checkSignaturesStatus()" style="display: none;">🔍 Verificar Firmas</button>
         </div>
     </header>
@@ -1753,7 +1829,7 @@
                 const signatureFileName = `signed_sig_${marker.marker_id}.png`;
                 const signatureStoragePath = `signed_signatures/${marker.doc_id}/${signatureFileName}`;
 
-                // --- INICIO DE LA MODIFICACIÓN ---
+                // --- INICIO DE LA MODIFICACIÓN: Añadimos un console.log para ver la ruta ---
                 console.log("[saveUserBSignatureToSupabase] Intentando subir firma a Storage con ruta:", signatureStoragePath);
                 // --- FIN DE LA MODIFICACIÓN ---
 
@@ -1789,9 +1865,71 @@
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
 
+                // NUEVA FUNCIONALIDAD: Habilitar botones de Guardar y Compartir para Usuario B
+                const savePdfBtn = document.getElementById('save-pdf-btn');
+                const sharePdfBtn = document.getElementById('share-pdf-btn');
+                if (savePdfBtn) savePdfBtn.style.display = 'inline-block';
+                // sharePdfBtn ahora tendrá una función diferente para Usuario B
+                if (sharePdfBtn) {
+                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Cambiar texto del botón
+                    sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Nueva función para compartir
+                    sharePdfBtn.style.display = 'inline-block';
+                }
+
             } catch (error) {
                 console.error("Error guardando firma de Usuario B:", error);
                 showMessage(`Error al guardar la firma: ${error.message}`);
+            }
+        }
+
+        // NUEVA FUNCIONALIDAD: Función para que el Usuario B comparta el PDF final
+        async function shareSignedPdfByB(docId, fileName) {
+            if (!pdfDoc || !supabaseClient) {
+                showMessage("Error: Documento o cliente Supabase no disponibles para compartir.");
+                return;
+            }
+            showMessage("Preparando PDF firmado para compartir...");
+
+            try {
+                const pdfBlob = await getProcessedPdfBlob(); // Obtiene el PDF con todas las firmas incrustadas
+                if (!pdfBlob) {
+                    showMessage("No se pudo generar el PDF firmado para compartir.");
+                    return;
+                }
+
+                const signedFileName = fileName.replace(/\.pdf$/i, '-firmado-final.pdf');
+                const storagePath = `signed_documents/${docId}/${signedFileName}`; // Nueva carpeta para PDFs finales
+
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('pdfs')
+                    .upload(storagePath, pdfBlob, {
+                        contentType: 'application/pdf',
+                        cacheControl: '3600',
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error("Error al subir el PDF firmado por B a Storage:", uploadError);
+                    throw new Error(`Error al subir el PDF firmado: ${uploadError.message}`);
+                }
+
+                // Opcional: Actualizar el marcador en DB para registrar el PDF final
+                // Esto podría hacerse si quieres un registro de la versión final en la tabla signature_markers
+                // Por ejemplo, añadiendo una columna 'final_pdf_path' y actualizándola aquí.
+                // Por ahora, solo subimos el archivo.
+
+                // Generar URL para compartir el PDF final
+                const { data: publicUrlData } = supabaseClient.storage
+                    .from('pdfs')
+                    .getPublicUrl(storagePath);
+
+                const finalShareUrl = publicUrlData.publicUrl;
+                
+                showMessage("¡PDF firmado subido y listo para compartir!\n\nEnlace de descarga directa:\n\n" + finalShareUrl, true, finalShareUrl);
+
+            } catch (error) {
+                console.error("Error compartiendo PDF firmado por Usuario B:", error);
+                showMessage(`Error al compartir el PDF firmado: ${error.message}`);
             }
         }
 
@@ -1941,11 +2079,12 @@
             if (typeof Storage !== "undefined") {
                 const lastShared = localStorage.getItem('lastSharedDocIdForUserA');
                 const checkBtn = document.getElementById('check-signatures-btn');
-                if (lastShared && checkBtn) { // Si hay un doc_id de una sesión anterior de compartir
-                    // No establecemos sharedDocIdForUserA aquí directamente a menos que confirmemos que el PDF actual
-                    // coincide, o si no hay un PDF cargado pero el usuario quiere verificar ese ID.
-                    // Por ahora, solo mostramos el botón si existe un ID guardado.
-                    // La función checkSignaturesStatus() se encargará de usarlo.
+                // NUEVA FUNCIONALIDAD: Ocultar Guardar/Compartir por defecto para Usuario B hasta que firme
+                const savePdfBtn = document.getElementById('save-pdf-btn');
+                const sharePdfBtn = document.getElementById('share-pdf-btn');
+
+
+                if (lastShared && checkBtn) {
                     checkBtn.style.display = 'inline-block';
                 }
             }
@@ -1956,9 +2095,11 @@
                 document.getElementById('file-input').style.display = 'none';
                 const addUserASigButton = document.getElementById('toolbar').querySelector('button[onclick="addSignatureBox()"]');
                 if(addUserASigButton) addUserASigButton.style.display = 'none';
-                const shareBtnElement = document.getElementById('share-pdf-btn'); // Renombrado para evitar conflicto con función
+                // Ocultamos el botón original de Compartir/Guardar para Usuario B al cargar inicialmente
+                // hasta que se firme o se cargue un documento ya firmado.
+                const shareBtnElement = document.getElementById('share-pdf-btn'); 
                 if(shareBtnElement) shareBtnElement.style.display = 'none';
-                const saveBtn = document.getElementById('toolbar').querySelector('button[onclick="downloadPDF()"]');
+                const saveBtn = document.getElementById('save-pdf-btn'); // Usamos el ID específico ahora
                 if(saveBtn) saveBtn.style.display = 'none';
                 const checkStatusBtn = document.getElementById('check-signatures-btn');
                 if(checkStatusBtn) checkStatusBtn.style.display = 'none';
@@ -2033,6 +2174,7 @@
 
                             await renderPage(currentPage); 
 
+                            // NUEVA FUNCIONALIDAD: Si el documento ya está firmado, habilitar Guardar y Compartir
                             if (markerDataForUserB.status === 'signed_by_user_b' && markerDataForUserB.signed_signature_storage_path) {
                                 showMessage("Este documento ya ha sido firmado. Mostrando firma...");
                                 const { data: sigBlob, error: sigErr } = await supabaseClient.storage.from('pdfs').download(markerDataForUserB.signed_signature_storage_path);
@@ -2047,6 +2189,16 @@
                                     placeholderArea.style.cursor = 'default';
                                     placeholderArea.onclick = null;
                                 }
+                                // Habilitar botones al cargar si ya está firmado
+                                const savePdfBtn = document.getElementById('save-pdf-btn');
+                                const sharePdfBtn = document.getElementById('share-pdf-btn');
+                                if (savePdfBtn) savePdfBtn.style.display = 'inline-block';
+                                if (sharePdfBtn) {
+                                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; 
+                                    sharePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
+                                    sharePdfBtn.style.display = 'inline-block';
+                                }
+
                             } else if (markerDataForUserB.status === 'pending_user_b_signature') {
                                  showMessage("Documento cargado. Haz clic en el área indicada para firmar.");
                             }
