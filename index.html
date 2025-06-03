@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... (Tu CSS completo aquí, no lo modifico) ... */
+        /* ... (Tu CSS completo existente) ... */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             display: flex;
@@ -624,8 +624,8 @@
         let pageVisitCounts = {};
         let totalPageViewsSession = 0;
 
-        let sharedDocIdForUserA = null;
-        let markerDataForUserB = null;
+        let sharedDocIdForUserA = null; // Variable crucial para el Usuario A
+        let markerDataForUserB = null; // Variable crucial para el Usuario B
 
 
         document.getElementById('file-input').addEventListener('change', function () {
@@ -634,7 +634,15 @@
                 originalFileName = file.name;
                 originalPdfFileBlob = file; 
                 
+                // Limpiar el ID de documento compartido si se carga un nuevo PDF
                 sharedDocIdForUserA = null;
+                // Al cargar un nuevo PDF, cerramos cualquier listener Realtime anterior
+                if (realtimeSubscription) {
+                    realtimeSubscription.unsubscribe();
+                    realtimeSubscription = null;
+                    console.log("Realtime: Suscripción anterior cerrada debido a nueva carga de PDF.");
+                }
+
                 const checkBtn = document.getElementById('check-signatures-btn');
                 if (checkBtn) checkBtn.style.display = 'none';
                 markerDataForUserB = null; 
@@ -1174,6 +1182,10 @@
                 
                 const checkBtn = document.getElementById('check-signatures-btn');
                 if (checkBtn) checkBtn.style.display = 'inline-block'; // Usuario A puede querer verificar firmas después
+
+                // Después de compartir, configuramos el listener Realtime para este documento
+                setupRealtimeListener();
+
                 // ----- FIN DE LA MODIFICACIÓN PARA ABRIR NUEVA PESTAÑA -----
 
             } catch (error) { 
@@ -1678,6 +1690,13 @@
                 // Añadir una referencia al ID del marcador si es una firma de Usuario B
                 marker_id_ref: isUserBSignature ? targetInfo.marker_id : undefined
             };
+            // Eliminar cualquier firma existente para este marcador antes de añadir la nueva
+            embeddedSignatures = embeddedSignatures.filter(sig => sig.marker_id_ref !== signatureInfo.marker_id_ref);
+            // Y si ya existe el elemento, removerlo del DOM
+            const existingEl = document.querySelector(`.embedded-signature[data-marker-id-ref="${signatureInfo.marker_id_ref}"]`);
+            if (existingEl) existingEl.remove();
+
+            signatureImgElement.setAttribute('data-marker-id-ref', signatureInfo.marker_id_ref); // Para poder identificarlo
             embeddedSignatures.push(signatureInfo); 
             pdfViewer.appendChild(signatureImgElement); 
             
@@ -1872,9 +1891,7 @@
                 const signatureFileName = `signed_sig_${marker.marker_id}.png`;
                 const signatureStoragePath = `signed_signatures/${marker.doc_id}/${signatureFileName}`;
 
-                // --- INICIO DE LA MODIFICACIÓN: Añadimos un console.log para ver la ruta ---
                 console.log("[saveUserBSignatureToSupabase] Intentando subir firma a Storage con ruta:", signatureStoragePath);
-                // --- FIN DE LA MODIFICACIÓN ---
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
                     .from('pdfs') 
@@ -1903,14 +1920,19 @@
                 // inmediatamente al confirmar la firma, antes de la subida a Supabase.
                 // Esto mejora la respuesta de la UI.
                 
-                // Habilitar botones de Guardar y Compartir para Usuario B
+                // Habilitar botones de Guardar y Compartir para Usuario B, y que ambos suban a Supabase
                 const savePdfBtn = document.getElementById('save-pdf-btn');
                 const sharePdfBtn = document.getElementById('share-pdf-btn');
-                if (savePdfBtn) savePdfBtn.style.display = 'inline-block';
-                // sharePdfBtn ahora tendrá una función diferente para Usuario B
+                
+                // Para Usuario B, "Guardar" y "Compartir" ahora hacen lo mismo: subir el PDF final.
+                if (savePdfBtn) {
+                    savePdfBtn.style.display = 'inline-block';
+                    savePdfBtn.textContent = '💾 Guardar PDF Final'; // Cambiar texto para claridad
+                    savePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Llama a la función de subida a Supabase
+                }
                 if (sharePdfBtn) {
                     sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Cambiar texto del botón
-                    sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Nueva función para compartir
+                    sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName); // Misma función de subida
                     sharePdfBtn.style.display = 'inline-block';
                 }
 
@@ -1925,18 +1947,18 @@
             }
         }
 
-        // NUEVA FUNCIONALIDAD: Función para que el Usuario B comparta el PDF final
+        // Esta función ahora también es usada por el botón "Guardar" del Usuario B
         async function shareSignedPdfByB(docId, fileName) {
             if (!pdfDoc || !supabaseClient) {
-                showMessage("Error: Documento o cliente Supabase no disponibles para compartir.");
+                showMessage("Error: Documento o cliente Supabase no disponibles para compartir/guardar.");
                 return;
             }
-            showMessage("Preparando PDF firmado para compartir...");
+            showMessage("Preparando PDF firmado para subir...");
 
             try {
                 const pdfBlob = await getProcessedPdfBlob(); // Obtiene el PDF con todas las firmas incrustadas
                 if (!pdfBlob) {
-                    showMessage("No se pudo generar el PDF firmado para compartir.");
+                    showMessage("No se pudo generar el PDF firmado para subir.");
                     return;
                 }
 
@@ -1956,22 +1978,18 @@
                     throw new Error(`Error al subir el PDF firmado: ${uploadError.message}`);
                 }
 
-                // Opcional: Actualizar el marcador en DB para registrar el PDF final
-                // Esto podría hacerse si quieres un registro de la versión final en la tabla signature_markers
-                // Por ahora, solo subimos el archivo.
-
-                // Generar URL para compartir el PDF final
+                // Generar URL para compartir/descargar el PDF final desde Supabase
                 const { data: publicUrlData } = supabaseClient.storage
                     .from('pdfs')
                     .getPublicUrl(storagePath);
 
                 const finalShareUrl = publicUrlData.publicUrl;
                 
-                showMessage("¡PDF firmado subido y listo para compartir!\n\nEnlace de descarga directa:\n\n" + finalShareUrl, true, finalShareUrl);
+                showMessage("¡PDF firmado subido a la nube!\n\nEnlace de descarga directa:\n\n" + finalShareUrl, true, finalShareUrl);
 
             } catch (error) {
-                console.error("Error compartiendo PDF firmado por Usuario B:", error);
-                showMessage(`Error al compartir el PDF firmado: ${error.message}`);
+                console.error("Error subiendo PDF firmado por Usuario B:", error);
+                showMessage(`Error al subir el PDF firmado: ${error.message}`);
             }
         }
 
@@ -2017,10 +2035,11 @@
                         const existingSignature = embeddedSignatures.find(sig => sig.marker_id_ref === marker.marker_id);
                         if (existingSignature) {
                             if(existingSignature.element && !pdfViewer.contains(existingSignature.element)){
+                                // Si ya está en el array local pero no en el DOM (por un cambio de página, por ejemplo)
                                 pdfViewer.appendChild(existingSignature.element); 
                             }
                             console.log(`Firma para ${marker.marker_id} ya está en embeddedSignatures o siendo procesada.`);
-                            continue; 
+                            continue; // Saltar si ya está cargada
                         }
                         
                         console.log(`Descargando firma para marcador ${marker.marker_id} desde ${marker.signed_signature_storage_path}`);
@@ -2044,6 +2063,8 @@
                         const signatureImgElement = document.createElement('img');
                         signatureImgElement.className = 'embedded-signature';
                         signatureImgElement.src = signatureDataURL;
+                        signatureImgElement.setAttribute('data-marker-id-ref', marker.marker_id); // Asignar el ID del marcador al elemento de imagen
+
                         pdfViewer.appendChild(signatureImgElement); 
 
                         const signatureInfo = {
@@ -2111,40 +2132,112 @@
             if (pinchState.active && e.touches.length < 2) pinchState.active = false; 
         });
         
+        // Variable para almacenar la suscripción a Realtime
+        let realtimeSubscription = null;
+
+        /**
+         * Configura un listener de Realtime para la tabla signature_markers.
+         * Se desuscribe de cualquier listener anterior para evitar duplicados.
+         */
+        async function setupRealtimeListener() {
+            if (!supabaseClient) {
+                console.warn("Realtime: Cliente Supabase no inicializado, no se puede configurar el listener.");
+                return;
+            }
+
+            // Desuscribir de cualquier suscripción anterior para evitar duplicados
+            if (realtimeSubscription) {
+                console.log("Realtime: Desuscribiendo de la suscripción anterior.");
+                await supabaseClient.removeChannel(realtimeSubscription);
+                realtimeSubscription = null;
+            }
+
+            if (sharedDocIdForUserA) {
+                console.log(`Realtime: Intentando suscribir a cambios para doc_id: ${sharedDocIdForUserA}`);
+                realtimeSubscription = supabaseClient
+                    .channel(`public:signature_markers:doc_id=eq.${sharedDocIdForUserA}`) // Canal específico por doc_id
+                    .on('postgres_changes', {
+                        event: 'UPDATE', // Solo escuchamos cuando se actualiza un registro
+                        schema: 'public',
+                        table: 'signature_markers',
+                        filter: `doc_id=eq.${sharedDocIdForUserA}` // Filtramos por el ID de nuestro documento
+                    }, payload => {
+                        console.log('Realtime: Cambio detectado en signature_markers:', payload);
+                        // Comprobamos si el cambio es relevante para la firma del usuario B
+                        if (payload.new && payload.new.status === 'signed_by_user_b' && payload.new.signed_signature_storage_path) {
+                            // Verificamos si esta firma ya está cargada en nuestro array local para evitar duplicados
+                            const isAlreadyEmbedded = embeddedSignatures.some(sig => sig.marker_id_ref === payload.new.marker_id);
+                            if (!isAlreadyEmbedded) {
+                                showMessage('¡Usuario B ha firmado el documento! Actualizando documento...');
+                                // Llamamos a checkSignaturesStatus para que se encargue de descargar y renderizar la nueva firma
+                                checkSignaturesStatus(); 
+                            } else {
+                                console.log(`Realtime: Firma para marcador ${payload.new.marker_id} ya incrustada.`);
+                            }
+                        }
+                    })
+                    .subscribe((status, err) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log(`Realtime: Suscrito con éxito al documento ${sharedDocIdForUserA}`);
+                            // Opcional: Llama a checkSignaturesStatus() inmediatamente después de suscribirte
+                            // para cargar cualquier firma que haya ocurrido antes de que te suscribieras (si el PDF ya está cargado).
+                            if (pdfDoc) { 
+                                checkSignaturesStatus();
+                            }
+                        } else if (status === 'CHANNEL_ERROR') {
+                            console.error('Realtime: Error en el canal:', err);
+                            showMessage(`Error en la conexión en tiempo real: ${err.message}. Intenta refrescar.`);
+                        } else if (status === 'CLOSED') {
+                            console.log('Realtime: Canal cerrado.');
+                        } else {
+                             console.log(`Realtime: Estado de suscripción: ${status}`);
+                        }
+                    });
+            } else {
+                console.log("Realtime: No hay sharedDocIdForUserA, el listener Realtime no se habilitará.");
+            }
+        }
+
+
+        // Modificar el listener de 'load' para llamar a setupRealtimeListener
         window.addEventListener('load', async () => { 
             adjustViewerHeightAndRender();
             const urlParams = new URLSearchParams(window.location.search);
             const docIdFromUrl = urlParams.get('doc_id');
             const mode = urlParams.get('mode');
 
-            // Lógica para restaurar sharedDocIdForUserA y mostrar botón "Verificar Firmas" si aplica
-            if (typeof Storage !== "undefined") {
+            // Lógica para restaurar sharedDocIdForUserA para el Usuario A o establecerlo para el Usuario B
+            if (docIdFromUrl) {
+                // Si hay doc_id en la URL, este es el documento relevante para esta sesión
+                sharedDocIdForUserA = docIdFromUrl; // Se usa para la suscripción Realtime y para checkSignaturesStatus
+            } else if (typeof Storage !== "undefined") {
+                // Si no hay doc_id en la URL, intentamos recuperarlo de localStorage (para Usuario A que refrescó)
                 const lastShared = localStorage.getItem('lastSharedDocIdForUserA');
-                const checkBtn = document.getElementById('check-signatures-btn');
-                // NUEVA FUNCIONALIDAD: Ocultar Guardar/Compartir por defecto para Usuario B hasta que firme
-                const savePdfBtn = document.getElementById('save-pdf-btn');
-                const sharePdfBtn = document.getElementById('share-pdf-btn');
-
-
-                if (lastShared && checkBtn) {
-                    checkBtn.style.display = 'inline-block';
+                if (lastShared) {
+                    sharedDocIdForUserA = lastShared;
                 }
             }
 
-
+            // Mostrar el botón "Verificar Firmas" si hay un doc_id compartido (para Usuario A)
+            const checkBtn = document.getElementById('check-signatures-btn');
+            if (checkBtn && sharedDocIdForUserA) {
+                checkBtn.style.display = 'inline-block';
+            }
+            
+            // Lógica específica para el modo de firma del Usuario B
             if (docIdFromUrl && mode === 'sign_for_user_b') { 
-                console.log(`Modo Firmante (Usuario B): Cargar documento con ID: ${docIdFromUrl}`);
+                console.log(`Modo Firmante (Usuario B): Cargando documento con ID: ${docIdFromUrl}`);
                 document.getElementById('file-input').style.display = 'none';
                 const addUserASigButton = document.getElementById('toolbar').querySelector('button[onclick="addSignatureBox()"]');
                 if(addUserASigButton) addUserASigButton.style.display = 'none';
-                // Ocultamos el botón original de Compartir/Guardar para Usuario B al cargar inicialmente
-                // hasta que se firme o se cargue un documento ya firmado.
-                const shareBtnElement = document.getElementById('share-pdf-btn'); 
-                if(shareBtnElement) shareBtnElement.style.display = 'none';
-                const saveBtn = document.getElementById('save-pdf-btn'); // Usamos el ID específico ahora
-                if(saveBtn) saveBtn.style.display = 'none';
-                const checkStatusBtn = document.getElementById('check-signatures-btn');
-                if(checkStatusBtn) checkStatusBtn.style.display = 'none';
+                
+                // Ocultamos los botones de Guardar y Compartir para Usuario B al cargar inicialmente
+                // Se habilitarán y cambiarán de función una vez que el PDF sea firmado.
+                const savePdfBtn = document.getElementById('save-pdf-btn');
+                if(savePdfBtn) savePdfBtn.style.display = 'none';
+                const sharePdfBtn = document.getElementById('share-pdf-btn'); 
+                if(sharePdfBtn) sharePdfBtn.style.display = 'none';
+                if(checkBtn) checkBtn.style.display = 'none'; // El usuario B no debería usar este botón inicialmente
 
                 showMessage(`Cargando documento ${docIdFromUrl} para firmar...`);
 
@@ -2161,7 +2254,6 @@
 
                     if (markerError) throw new Error(`Error obteniendo marcador: ${markerError.message}`);
                     
-                    // Buscar el marcador de firma para el usuario B (puede estar pendiente o ya firmado)
                     const targetMarker = markers ? markers.find(m => m.status === 'pending_user_b_signature' || m.status === 'signed_by_user_b') : null;
 
                     if (!targetMarker) {
@@ -2170,7 +2262,7 @@
                         return;
                     }
                     
-                    markerDataForUserB = targetMarker; // Guardar el marcador para futuras operaciones
+                    markerDataForUserB = targetMarker; 
                     let pdfPathInStorage = markerDataForUserB.pdf_storage_path;
 
                     if (!pdfPathInStorage) { 
@@ -2188,12 +2280,12 @@
                         originalFileName = pdfPathInStorage.split('/').pop(); 
                     }
 
-                    const { data: pdfBlobData, error: downloadError } = await supabaseClient.storage // Renombrado pdfBlob a pdfBlobData
+                    const { data: pdfBlobData, error: downloadError } = await supabaseClient.storage
                         .from('pdfs') 
                         .download(pdfPathInStorage);
 
                     if (downloadError) throw new Error(`Error descargando PDF (${pdfPathInStorage}): ${downloadError.message}`);
-                    originalPdfFileBlob = pdfBlobData; // Asignar el blob descargado
+                    originalPdfFileBlob = pdfBlobData;
 
                     const reader = new FileReader();
                     reader.onload = async function (e_reader) {
@@ -2204,7 +2296,7 @@
                             const loadingTask = pdfjsLib.getDocument({ data: e_reader.target.result });
                             pdfDoc = await loadingTask.promise;
                             totalPages = pdfDoc.numPages;
-                            currentPage = markerDataForUserB.page; // Ir directamente a la página donde se debe firmar
+                            currentPage = markerDataForUserB.page;
                             translatePos = { x: 0, y: 0 }; scale = 1;
                             document.getElementById('zoom-slider').value = scale;
                             document.getElementById('total-pages').textContent = totalPages;
@@ -2217,7 +2309,6 @@
 
                             await renderPage(currentPage); 
 
-                            // NUEVA FUNCIONALIDAD: Si el documento ya está firmado, habilitar Guardar y Compartir
                             if (markerDataForUserB.status === 'signed_by_user_b' && markerDataForUserB.signed_signature_storage_path) {
                                 showMessage("Este documento ya ha sido firmado. Mostrando firma...");
                                 const { data: sigBlob, error: sigErr } = await supabaseClient.storage.from('pdfs').download(markerDataForUserB.signed_signature_storage_path);
@@ -2225,21 +2316,24 @@
                                 const sigDataURL = await new Promise((resolve, reject) => {
                                         const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
                                 });
-                                // Llamamos a embedSignature para que la firma existente se muestre en el visor
-                                embedSignature(true, { // Se pasa true para isUserBSignature y el markerData para las coordenadas
+                                embedSignature(true, { 
                                     page: markerDataForUserB.page,
                                     x_coord: markerDataForUserB.x_coord,
                                     y_coord: markerDataForUserB.y_coord,
                                     width_val: markerDataForUserB.width_val,
                                     height_val: markerDataForUserB.height_val,
                                     dataURL: sigDataURL,
-                                    marker_id: markerDataForUserB.marker_id // Necesario para la referencia
+                                    marker_id: markerDataForUserB.marker_id
                                 });
 
-                                // Habilitar botones al cargar si ya está firmado
+                                // Habilitar y configurar botones para Usuario B después de cargar PDF ya firmado
                                 const savePdfBtn = document.getElementById('save-pdf-btn');
                                 const sharePdfBtn = document.getElementById('share-pdf-btn');
-                                if (savePdfBtn) savePdfBtn.style.display = 'inline-block';
+                                if (savePdfBtn) {
+                                    savePdfBtn.style.display = 'inline-block';
+                                    savePdfBtn.textContent = '💾 Guardar PDF Final';
+                                    savePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
+                                }
                                 if (sharePdfBtn) {
                                     sharePdfBtn.textContent = '📤 Compartir PDF Final'; 
                                     sharePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
@@ -2254,7 +2348,7 @@
                                showMessage(`Error al procesar el PDF: ${pdfLoadError.message}`);
                         }
                     };
-                    reader.readAsArrayBuffer(pdfBlobData); // Usar pdfBlobData
+                    reader.readAsArrayBuffer(pdfBlobData);
 
                 } catch (error) {
                     console.error("Error cargando documento para Usuario B:", error);
@@ -2266,6 +2360,10 @@
                 showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto o no completamente funcional con las nuevas características.)`);
                 document.getElementById('file-input').style.display = 'none';
             }
+            
+            // Llama a la función de Realtime listener después de que sharedDocIdForUserA
+            // haya sido establecido (tanto para Usuario A como para Usuario B si aplica)
+            setupRealtimeListener();
         });
         window.addEventListener('resize', adjustViewerHeightAndRender);
 
