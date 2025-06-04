@@ -8,111 +8,149 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... (Tu CSS completo existente) ... */
+        :root {
+            --primary-color: #3B82F6; /* Azul Tailwind 500 */
+            --primary-hover-color: #2563EB; /* Azul Tailwind 600 */
+            --secondary-color: #6B7280; /* Gris Tailwind 500 */
+            --secondary-hover-color: #4B5563; /* Gris Tailwind 600 */
+            --header-bg: #2C3E50; /* Azul Pizarra Oscuro */
+            --header-text-color: #ECF0F1; /* Nubes (casi blanco) */
+            --body-bg-color: #F4F7F9; /* Gris Muy Claro */
+            --container-bg-color: #FFFFFF;
+            --text-color-dark: #34495E; /* Asfalto Húmedo */
+            --text-color-medium: #7F8C8D; /* Gris Plata */
+            --text-color-light: #BDC3C7; /* Plata */
+            --success-color: #2ECC71; /* Esmeralda */
+            --danger-color: #E74C3C; /* Alizarina */
+            --warning-color: #F39C12; /* Naranja */
+            --info-color: #3498DB; /* Azul Peter River */
+            --border-color: #D1D5DB; /* Gris Tailwind 300 */
+            --border-radius: 0.375rem; /* 6px */
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Cambiado para que el header esté arriba */
             min-height: 100vh;
             margin: 0;
-            background-color: #e9ecef;
-            padding: 20px;
+            background-color: var(--body-bg-color);
+            color: var(--text-color-dark);
             box-sizing: border-box;
             text-align: center;
+            overflow: hidden; /* Evita el scroll en el body, el visor lo manejará */
         }
-        .container {
-            background-color: #ffffff;
+        
+        /* Estilos para la página inicial (si se muestra antes de cargar PDF) */
+        .initial-container { /* Renombrado de .container para evitar conflictos */
+            background-color: var(--container-bg-color);
             padding: 25px 30px;
-            border-radius: 0.3rem;
-            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow-lg);
             max-width: 450px;
-            width: 100%;
+            width: 90%;
+            margin-top: 50px; /* Espacio desde arriba */
         }
-        h1 {
-            color: #343a40;
+
+        .initial-container h1 {
+            color: var(--header-bg);
             margin-top: 0;
             margin-bottom: 15px;
-            font-size: 1.4rem;
-            font-weight: 500;
+            font-size: 1.5rem; /* Un poco más grande */
+            font-weight: 600;
         }
-        p {
-            color: #495057;
+
+        .initial-container p {
+            color: var(--text-color-medium);
             margin-bottom: 10px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
-        #qr-code-display { /* Contenedor del QR */
-            margin: 15px auto;
-            border: 1px solid #dee2e6;
+
+        #qr-code-display {
+            margin: 20px auto;
+            border: 1px solid var(--border-color);
             padding: 8px;
-            background-color: #fff;
+            background-color: var(--container-bg-color);
             display: inline-block;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            width: 166px; /* Para QR de 150px + padding */
+            box-shadow: var(--box-shadow);
+            width: 166px; 
             height: 166px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: var(--border-radius);
         }
-        #qr-code-display img { /* Estilo para la imagen del QR */
+
+        #qr-code-display img {
             max-width: 100%;
             max-height: 100%;
+            border-radius: calc(var(--border-radius) - 4px); /* Para que encaje bien */
         }
+
         .url-section {
-            margin-top: 15px;
-            margin-bottom: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
-        .url-section p { /* "Enlace para firmar:" */
-            margin-bottom: 5px;
+
+        .url-section p {
+            margin-bottom: 8px;
             font-weight: 500;
-            color: #212529;
-            font-size: 0.85rem;
+            color: var(--text-color-dark);
+            font-size: 0.9rem;
         }
-        #shareable-url-input {
-            padding: 0.4rem 0.6rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            font-size: 0.85rem;
-            background-color: #f8f9fa;
+
+        #shareable-url-input { /* Estilo reutilizado en el modal de mensajes */
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            background-color: #F9FAFB; /* Gris Tailwind 50 */
             width: 100%;
             box-sizing: border-box;
             text-align: center;
-            margin-bottom: 10px; /* Espacio antes del mensaje de estado */
+            margin-bottom: 10px;
+            color: var(--text-color-dark);
         }
-        #status-message {
+        #shareable-url-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+
+        #status-message { /* Generalmente no visible si se usan modales */
             margin-top: 15px;
             font-weight: bold;
             font-size: 0.9rem;
-        }
-        /* Aquí empieza el CSS del segundo script */
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #e9ecef;
-            overflow: hidden; /* Evita el scroll en el body, el visor lo manejará */
+            color: var(--info-color);
         }
 
+        /* Estilos de la aplicación principal de firma */
+        * { box-sizing: border-box; }
+
         header {
-            background: #343a40;
-            color: white;
-            padding: 0.5rem;
+            background: var(--header-bg);
+            color: var(--header-text-color);
+            padding: 0.75rem 1rem; /* Padding ajustado */
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative; /* Para z-index si fuera necesario */
-            z-index: 1000; /* Asegura que el header esté sobre el visor */
+            position: relative; 
+            z-index: 1000; 
+            width: 100%; /* Ocupa todo el ancho */
         }
 
         header h2 {
             margin-top: 0.2rem;
-            margin-bottom: 0.5rem;
-            font-size: 1.15rem;
-            font-weight: 500;
+            margin-bottom: 0.75rem; /* Más espacio */
+            font-size: 1.3rem; /* Más prominente */
+            font-weight: 600;
         }
 
         .navigation-toolbar {
@@ -120,357 +158,383 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            max-width: 380px; /* Limita el ancho para mejor apariencia */
-            margin: 0 auto 0.5rem auto; /* Centrado y espacio inferior */
+            max-width: 400px; 
+            margin: 0 auto 0.5rem auto;
         }
 
         #page-info {
-            margin: 0 0.8rem;
-            font-size: 0.8rem;
+            margin: 0 1rem; /* Más espacio */
+            font-size: 0.85rem;
             white-space: nowrap;
-            color: #adb5bd; /* Un color más suave para la información de página */
+            color: var(--text-color-light);
         }
 
         #toolbar {
             display: flex;
-            flex-wrap: wrap; /* Permite que los botones pasen a la siguiente línea si no caben */
+            flex-wrap: wrap; 
             justify-content: center;
             align-items: center;
-            gap: 0.3rem; /* Espacio pequeño entre botones */
+            gap: 0.5rem; /* Espacio entre botones */
             width: 100%;
         }
 
         .toolbar-btn {
-            background: #007bff;
+            background: var(--primary-color);
             border: none;
-            padding: 0.45rem 0.8rem; /* Ajuste de padding */
-            margin: 0.15rem; /* Margen pequeño */
+            padding: 0.5rem 1rem; 
             color: white;
-            font-size: 0.8rem; /* Tamaño de fuente reducido para botones */
-            border-radius: 0.25rem;
+            font-size: 0.85rem; 
+            border-radius: var(--border-radius);
             cursor: pointer;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
-            flex-grow: 0; /* No crecer */
-            flex-basis: auto; /* Basado en contenido */
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+            flex-grow: 0; 
+            flex-basis: auto;
+            font-weight: 500;
         }
         .toolbar-btn:hover {
-            background-color: #0056b3;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); /* Sombra de foco sutil */
+            background-color: var(--primary-hover-color);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+            transform: translateY(-1px);
         }
         .toolbar-btn.page-nav-btn {
-            min-width: auto; /* Ancho automático */
-            padding: 0.4rem 0.7rem; /* Padding específico para botones de página */
-            background-color: #495057; /* Color diferente para navegación de página */
+            padding: 0.45rem 0.8rem; 
+            background-color: var(--secondary-color); 
         }
         .toolbar-btn.page-nav-btn:hover {
-            background-color: #343a40;
-            box-shadow: 0 0 0 0.2rem rgba(108,117,125,.25);
+            background-color: var(--secondary-hover-color);
+            box-shadow: 0 0 0 0.2rem rgba(107, 114, 128, 0.25);
         }
 
 
         #pdf-viewer {
             width: 100vw;
             /* height será ajustado por JS para ocupar el espacio restante */
-            overflow: hidden; /* El canvas interno puede ser más grande */
-            background: #f8f9fa; /* Un fondo ligeramente diferente al body */
-            position: relative; /* Para posicionar el canvas y otros elementos internos */
-            display: flex; /* Para centrar el canvas si es más pequeño que el visor */
+            overflow: hidden; 
+            background: #E5E7EB; /* Gris Tailwind 200 - fondo del visor */
+            position: relative; 
+            display: flex; 
             justify-content: center;
             align-items: center;
-            touch-action: none; /* Previene acciones táctiles por defecto como scroll/zoom en el visor mismo */
+            touch-action: none; 
+            flex-grow: 1; /* Para que ocupe el espacio restante */
         }
 
         .page-usage-counter {
             position: absolute;
-            top: 8px; /* Espaciado desde la parte superior del visor */
-            padding: 4px 8px;
-            background-color: rgba(0, 0, 0, 0.6);
+            top: 10px; 
+            padding: 5px 10px;
+            background-color: rgba(44, 62, 80, 0.7); /* Fondo semi-transparente oscuro */
             color: white;
-            font-size: 0.7rem; /* Pequeño para no ser intrusivo */
-            border-radius: 0.2rem;
-            z-index: 50; /* Sobre el canvas, debajo de modales */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.75rem; 
+            border-radius: var(--border-radius);
+            z-index: 50; 
+            box-shadow: var(--box-shadow);
         }
-        #current-page-visits {
-            left: 8px;
-        }
-        #total-page-views {
-            right: 8px;
-        }
+        #current-page-visits { left: 10px; }
+        #total-page-views { right: 10px; }
 
 
         #pdf-canvas {
-            cursor: grab; /* Indica que se puede arrastrar */
-            image-rendering: -webkit-optimize-contrast; /* Mejora la nitidez en Chrome/Safari */
-            image-rendering: crisp-edges; /* Mejora la nitidez en Firefox */
-            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Sombra sutil para dar profundidad */
+            cursor: grab; 
+            image-rendering: -webkit-optimize-contrast; 
+            image-rendering: crisp-edges; 
+            box-shadow: var(--box-shadow-lg); /* Sombra más pronunciada */
         }
 
         #zoom-slider-container {
-            position: fixed; /* Fijo en la pantalla */
-            right: 8px; /* Pegado a la derecha */
-            top: 50%; /* Centrado verticalmente */
+            position: fixed; 
+            right: 10px; 
+            top: 50%; 
             transform: translateY(-50%);
-            background: rgba(52, 58, 64, 0.8); /* Fondo semitransparente */
-            padding: 6px;
-            border-radius: 0.25rem;
-            z-index: 9999; /* Encima de casi todo */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            background: rgba(44, 62, 80, 0.85); /* Más opaco */
+            padding: 8px;
+            border-radius: var(--border-radius);
+            z-index: 9999; 
+            box-shadow: var(--box-shadow);
         }
 
         #zoom-slider {
-            writing-mode: bt-lr; /* IE */
-            -webkit-appearance: slider-vertical; /* WebKit */
-            width: 16px; /* Ancho del slider vertical */
-            height: 100px; /* Altura del slider */
-            transform: rotate(180deg); /* Para que el mínimo esté abajo */
+            writing-mode: bt-lr; 
+            -webkit-appearance: slider-vertical; 
+            width: 18px; 
+            height: 120px; 
+            transform: rotate(180deg); 
+            cursor: pointer;
+        }
+        /* Estilos para el thumb del slider (navegadores WebKit) */
+        #zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px; /* Más grande para mejor agarre */
+            height: 24px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        /* Estilos para el thumb del slider (Firefox) */
+        #zoom-slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
         }
 
-        /* Estilo para el input de archivo */
+
         input[type="file"]#file-input {
-            padding: 0.4rem;
-            border-radius: 0.25rem;
-            border: 1px solid #ced4da;
-            background-color: #fff;
-            color: #495057;
+            padding: 0.45rem 0.6rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background-color: var(--container-bg-color);
+            color: var(--text-color-dark);
             cursor: pointer;
-            font-size: 0.75rem; /* Tamaño de fuente más pequeño */
-            max-width: 240px; /* Evita que sea demasiado ancho */
-            margin: 0.15rem; /* Margen consistente con otros botones */
+            font-size: 0.8rem; 
+            max-width: 250px; 
+            margin: 0.15rem; 
+            transition: border-color 0.2s ease;
         }
-        input[type="file"]#file-input::file-selector-button { /* Estilo del botón interno del input file */
-            background: #6c757d;
+        input[type="file"]#file-input:hover {
+            border-color: var(--primary-color);
+        }
+        input[type="file"]#file-input::file-selector-button {
+            background: var(--secondary-color);
             color: white;
             border: none;
-            padding: 0.4rem 0.7rem;
-            border-radius: 0.2rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: calc(var(--border-radius) - 2px); /* Un poco más pequeño que el input */
             cursor: pointer;
-            margin-right: 8px; /* Espacio entre el botón y el texto del archivo */
+            margin-right: 10px; 
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+        input[type="file"]#file-input::file-selector-button:hover {
+            background-color: var(--secondary-hover-color);
         }
 
-        /* Estilos para el cuadro de firma interactivo */
         .signature-box {
             position: absolute;
-            border: 1px solid #007bff; /* Borde azul distintivo */
-            background-color: rgba(0, 123, 255, 0.08); /* Fondo azul muy sutil */
-            cursor: move; /* Cursor por defecto cuando es arrastrable */
-            z-index: 100; /* Encima del canvas PDF, debajo de modales */
-            touch-action: none; /* Importante para el arrastre táctil */
-            border-radius: 3px;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.35), 0 1px 4px rgba(0,0,0,0.15); /* Para mayor visibilidad */
+            border: 2px solid var(--primary-color); 
+            background-color: rgba(59, 130, 246, 0.1); 
+            cursor: move; 
+            z-index: 100; 
+            touch-action: none; 
+            border-radius: var(--border-radius);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3), var(--box-shadow);
         }
         .signature-box.position-confirmed {
-            cursor: default; /* Cursor cuando la posición está bloqueada */
-            border: 1px dashed #6c757d; /* Borde discontinuo gris */
-            background-color: transparent; /* o rgba(0, 123, 255, 0.02) para un leve tinte */
-            box-shadow: none; /* Sin sombra activa */
+            cursor: default; 
+            border: 2px dashed var(--secondary-color); 
+            background-color: rgba(107, 114, 128, 0.05); 
+            box-shadow: none; 
         }
-
 
         .signature-box-controls {
             position: absolute;
-            top: -38px; /* Posicionado encima del cuadro */
+            top: -42px; /* Ajustado para botones más grandes */
             left: 50%;
-            transform: translateX(-50%); /* Centrado horizontalmente */
+            transform: translateX(-50%); 
             display: flex;
-            gap: 8px; /* Espacio entre botones de control */
-            padding: 5px;
-            background-color: #fff; /* Fondo para los controles */
-            border-radius: 0.25rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            gap: 10px; 
+            padding: 6px;
+            background-color: var(--container-bg-color); 
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
         }
 
         .signature-box-btn {
-            width: 30px; /* Botones circulares */
-            height: 30px;
+            width: 32px; 
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 16px; /* Tamaño del ícono/emoji */
+            font-size: 18px; 
             border: none;
             color: white;
             transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, background-color 0.2s ease;
         }
         .signature-box-btn:hover {
-            transform: scale(1.1); /* Efecto de zoom al pasar el mouse */
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transform: scale(1.15); /* Más pronunciado */
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
         }
-        .signature-box-btn.confirm { background-color: #28a745; } /* Verde */
-        .signature-box-btn.cancel { background-color: #dc3545; } /* Rojo */
-        .signature-box-btn.edit { background-color: #ffc107; color: #212529; } /* Amarillo, texto oscuro */
-        .signature-box-btn.draw { background-color: #007bff; } /* Azul */
+        .signature-box-btn.confirm { background-color: var(--success-color); } 
+        .signature-box-btn.cancel { background-color: var(--danger-color); } 
+        .signature-box-btn.edit { background-color: var(--warning-color); color: var(--text-color-dark); } 
+        .signature-box-btn.draw { background-color: var(--info-color); } 
 
 
         .resize-handle {
             position: absolute;
-            width: 12px; /* Mayor área táctil */
-            height: 12px;
-            background-color: #fff; /* Color de fondo del manejador */
-            border: 2px solid #007bff; /* Borde para visibilidad */
-            border-radius: 50%; /* Circular */
-            z-index: 101; /* Encima del signature-box */
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            width: 14px; 
+            height: 14px;
+            background-color: var(--container-bg-color); 
+            border: 2px solid var(--primary-color); 
+            border-radius: 50%; 
+            z-index: 101; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
-        .resize-handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
-        .resize-handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
-        .resize-handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
-        .resize-handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+        .resize-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+        .resize-handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+        .resize-handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+        .resize-handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
 
-        /* Estilos para el modal de firma */
         .signature-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); /* Overlay más oscuro */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000; /* Muy alto para estar sobre todo */
-            padding: 10px; /* Espacio por si el modal es muy grande */
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.65); /* Overlay más oscuro */
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000; 
+            padding: 15px; 
         }
 
         .signature-container {
-            background-color: #ffffff; /* Fondo blanco */
-            padding: 25px; /* Más padding */
-            border-radius: 0.3rem; /* Radio de borde consistente */
+            background-color: var(--container-bg-color); 
+            padding: 30px; 
+            border-radius: var(--border-radius); 
             width: 100%;
-            max-width: 550px; /* Ancho máximo para pantallas grandes */
+            max-width: 600px; /* Un poco más ancho para el pad de firma */
             height: auto;
-            max-height: 90vh; /* Asegura que quepa en la vista */
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15); /* Sombra más suave */
+            max-height: 90vh; 
+            display: flex; flex-direction: column;
+            box-shadow: var(--box-shadow-lg); 
         }
 
         .signature-canvas-container {
-            flex-grow: 1; /* Permite que el canvas tome el espacio disponible */
-            border: 1px solid #ced4da; /* Borde estándar */
-            margin-bottom: 20px; /* Espacio antes de los controles */
-            position: relative; /* Para el canvas interno */
-            min-height: 200px; /* Área mínima de dibujo */
-            border-radius: 0.25rem; /* Bordes redondeados */
-            overflow: hidden; /* Recorta el canvas si se desborda */
-            background-color: #fff; /* Asegura fondo blanco si el canvas es transparente */
+            flex-grow: 1; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 20px; 
+            position: relative; 
+            min-height: 220px; /* Un poco más alto */
+            border-radius: var(--border-radius); 
+            overflow: hidden; 
+            background-color: #FEFEFE; /* Casi blanco, para el pad */
         }
 
         #signature-canvas {
-            width: 100%;
-            height: 100%;
-            background-color: transparent; /* Deja que el CSS controle el fondo */
+            width: 100%; height: 100%;
+            background-color: transparent; 
             cursor: crosshair;
-            touch-action: none; /* Para dibujar en dispositivos táctiles */
+            touch-action: none; 
         }
 
         .signature-controls {
-            display: flex;
-            justify-content: space-between; /* Distribuye los botones */
-            flex-wrap: wrap; /* Envuelve los botones en pantallas pequeñas */
-            gap: 10px; /* Espacio entre botones */
+            display: flex; justify-content: space-between; 
+            flex-wrap: wrap; 
+            gap: 10px; 
         }
 
         .signature-control-btn {
-            padding: 0.6rem 1rem; /* Padding cómodo */
+            padding: 0.7rem 1.2rem; 
             border: none;
-            border-radius: 0.25rem; /* Radio de borde consistente */
+            border-radius: var(--border-radius); 
             cursor: pointer;
-            font-size: 0.9rem;
-            flex-grow: 1; /* Permite que los botones crezcan */
-            min-width: 100px; /* Ancho mínimo para legibilidad */
+            font-size: 0.95rem;
+            flex-grow: 1; 
+            min-width: 120px; /* Ancho mínimo */
             text-align: center;
             transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-            font-weight: 500; /* Texto ligeramente más grueso */
+            font-weight: 500; 
+            color: white; /* Texto blanco por defecto */
         }
         .signature-control-btn:hover {
-            transform: translateY(-2px); /* Efecto sutil de elevación */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombra más suave al pasar el mouse */
+            transform: translateY(-2px); 
+            box-shadow: var(--box-shadow);
         }
-        .signature-control-btn.cancel { background-color: #dc3545; color: white; }
-        .signature-control-btn.clear { background-color: #ffc107; color: #212529; } /* Texto más oscuro para amarillo */
-        .signature-control-btn.confirm { background-color: #28a745; color: white; }
+        .signature-control-btn.cancel { background-color: var(--danger-color); }
+        .signature-control-btn.clear { background-color: var(--warning-color); color: var(--text-color-dark); } 
+        .signature-control-btn.confirm { background-color: var(--success-color); }
 
 
-        /* Estilo para la imagen de firma ya incrustada en el PDF viewer */
         .embedded-signature {
             position: absolute;
-            z-index: 99; /* Debajo del signature-box pero encima del canvas PDF */
-            pointer-events: none; /* Permite que los clics pasen al PDF si es necesario */
-            transform-origin: top left; /* Asegura que el escalado sea desde la esquina superior izquierda */
+            z-index: 99; 
+            pointer-events: none; 
+            transform-origin: top left; 
         }
 
-        /* Estilos para el modal de mensajes genérico */
         .message-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20000; /* Encima de todo, incluso el modal de firma */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.65);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20000; 
             padding: 15px;
         }
         .message-modal-content {
-            background-color: white;
-            padding: 25px;
-            border-radius: 0.3rem;
+            background-color: var(--container-bg-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
             text-align: center;
-            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
-            max-width: 400px; /* Limita el ancho del modal */
+            box-shadow: var(--box-shadow-lg);
+            max-width: 450px; 
             width: 100%;
         }
         .message-modal-content p {
             margin-top: 0;
             margin-bottom: 20px;
             font-size: 1rem;
-            color: #212529; /* Texto más oscuro para mejor legibilidad */
-            white-space: pre-wrap; /* Para respetar saltos de línea \n */
+            color: var(--text-color-dark); 
+            white-space: pre-wrap; 
+            line-height: 1.6;
         }
-        .message-modal-content button, .message-modal-content input { /* Estilo común para botón e input en modal */
-            background-color: #007bff;
+        .message-modal-content button, .message-modal-content input[type="button"], .message-modal-content input[type="submit"] { 
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 0.5rem 1.25rem;
-            border-radius: 0.25rem;
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--border-radius);
             cursor: pointer;
             font-size: 0.95rem;
+            font-weight: 500;
             transition: background-color 0.2s ease;
-            display: block; /* Ocupa todo el ancho */
+            display: block; 
             width: 100%;
-            margin-top: 10px; /* Espacio si hay varios elementos */
+            margin-top: 10px; 
         }
-        .message-modal-content button:hover {
-            background-color: #0056b3;
+        .message-modal-content button:hover, .message-modal-content input[type="button"]:hover, .message-modal-content input[type="submit"]:hover {
+            background-color: var(--primary-hover-color);
         }
-        .message-modal-content input { /* Estilo específico para input si es necesario */
-            background-color: #fff;
-            color: #495057;
-            border: 1px solid #ced4da;
+        .message-modal-content input[type="text"] { /* Reutiliza estilo de #shareable-url-input */
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            background-color: #F9FAFB;
+            width: 100%;
+            box-sizing: border-box;
             margin-bottom: 10px;
-            text-align: left;
-            cursor: text;
+            color: var(--text-color-dark);
+        }
+         .message-modal-content input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
-        /* Estilo para el área de firma de Usuario B */
+
         .user-b-signature-area {
             position: absolute;
-            border: 2px dashed #007bff;
-            background-color: rgba(0, 123, 255, 0.08);
+            border: 2px dashed var(--info-color);
+            background-color: rgba(52, 152, 219, 0.1); /* Azul claro transparente */
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             text-align: center;
-            z-index: 98; /* Encima del PDF, debajo de otros controles si los hubiera */
+            z-index: 98; 
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .user-b-signature-area:hover {
+            background-color: rgba(52, 152, 219, 0.15);
+            border-color: var(--primary-color);
         }
         .user-b-signature-area span {
-            color:#007bff;
+            color: var(--info-color);
             font-size:0.9em;
+            font-weight: 500;
             padding:5px;
         }
 
@@ -482,12 +546,13 @@
         <div class="navigation-toolbar">
             <button class="toolbar-btn page-nav-btn" onclick="prevPage()">⬅️ Anterior</button>
             <div id="page-info">Página <span id="current-page">1</span> de <span id="total-pages">1</span></div>
-            <button class="toolbar-btn page-nav-btn" onclick="nextPage()">➡️ Siguiente</button>
+            <button class="toolbar-btn page-nav-btn" onclick="nextPage()">Siguiente ➡️</button>
         </div>
         <div id="toolbar">
             <input type="file" id="file-input" accept="application/pdf" />
             <button class="toolbar-btn" onclick="addSignatureBox()">✍️ Añadir Firma</button>
-            <button class="toolbar-btn" id="save-pdf-btn" onclick="downloadPDF()">📂 Guardar</button> <button class="toolbar-btn" id="share-pdf-btn" onclick="sharePDF()">📤 Compartir</button>
+            <button class="toolbar-btn" id="save-pdf-btn" onclick="downloadPDF()">📂 Guardar</button>
+            <button class="toolbar-btn" id="share-pdf-btn" onclick="sharePDF()">📤 Compartir</button>
             <button class="toolbar-btn" id="check-signatures-btn" onclick="checkSignaturesStatus()" style="display: none;">🔍 Verificar Firmas</button>
         </div>
     </header>
@@ -495,7 +560,7 @@
     <div id="pdf-viewer">
         <canvas id="pdf-canvas"></canvas>
         <div id="current-page-visits" class="page-usage-counter" title="Visitas a esta página">P: 0</div>
-        <div id="total-page-views" class="page-usage-counter" title="T: 0</div>
+        <div id="total-page-views" class="page-usage-counter" title="Visitas totales en sesión">T: 0</div>
     </div>
 
     <div id="zoom-slider-container">
@@ -512,23 +577,30 @@
         function showMessage(message, isUrl = false, urlToCopy = '') {
             const existingModal = document.querySelector('.message-modal');
             if (existingModal) existingModal.remove();
+            
             const modal = document.createElement('div');
             modal.className = 'message-modal';
+            
             const content = document.createElement('div');
             content.className = 'message-modal-content';
+            
             let htmlContent = `<p>${message.replace(/\n/g, '<br>')}</p>`;
+            
             if (isUrl && urlToCopy) {
-                htmlContent += `<input type="text" value="${urlToCopy}" id="shareable-url-input" readonly style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">`;
-                htmlContent += `<button id="copy-url-btn">Copiar URL</button>`;
+                htmlContent += `<input type="text" value="${urlToCopy}" id="modal-shareable-url-input" readonly>`; // ID único para input en modal
+                htmlContent += `<button id="modal-copy-url-btn">Copiar URL</button>`;
             }
-            htmlContent += `<button id="ok-message-btn" style="margin-top: ${isUrl && urlToCopy ? '5px' : '0'};">OK</button>`;
+            htmlContent += `<button id="modal-ok-message-btn" style="margin-top: ${isUrl && urlToCopy ? '10px' : '0'};">OK</button>`; // Ajuste de margen
+            
             content.innerHTML = htmlContent;
             modal.appendChild(content);
             document.body.appendChild(modal);
-            content.querySelector('#ok-message-btn').onclick = () => modal.remove();
+
+            content.querySelector('#modal-ok-message-btn').onclick = () => modal.remove();
+            
             if (isUrl && urlToCopy) {
-                const copyBtn = content.querySelector('#copy-url-btn');
-                const urlInput = content.querySelector('#shareable-url-input');
+                const copyBtn = content.querySelector('#modal-copy-url-btn');
+                const urlInput = content.querySelector('#modal-shareable-url-input');
                 copyBtn.onclick = () => {
                     urlInput.select();
                     urlInput.setSelectionRange(0, 99999);
@@ -537,20 +609,20 @@
                             navigator.clipboard.writeText(urlToCopy).then(() => {
                                 copyBtn.textContent = '¡Copiado!';
                                 setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
-                            }).catch(err => { 
+                            }).catch(err => {    
                                 console.warn('navigator.clipboard.writeText falló, intentando execCommand:', err);
                                 if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
                                 copyBtn.textContent = '¡Copiado (fallback)!';
                                 setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                             });
-                        } else { 
+                        } else {    
                             if (!document.execCommand('copy')) throw new Error('execCommand no soportado');
                             copyBtn.textContent = '¡Copiado (fallback)!';
                             setTimeout(() => { copyBtn.textContent = 'Copiar URL'; }, 2000);
                         }
                     } catch (err) {
                         console.error('Error al copiar URL:', err);
-                        showMessage('Error al copiar. Por favor, copia manualmente.');
+                        showMessage('Error al copiar. Por favor, copia manualmente.'); // Llama a showMessage recursivamente, podría ser problemático. Mejor un alert o un texto simple.
                     }
                 };
             }
@@ -560,23 +632,23 @@
             if (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY') {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                     global: {
-                        fetch: fetch // Esto ayuda con problemas de CORS en entornos locales.
+                        fetch: fetch 
                     }
                 });
                 console.info("Cliente de Supabase inicializado correctamente.");
             } else {
                 const placeholderErrorMsg = "Configuración Incompleta: Supabase URL o Anon Key son incorrectas.\n\nLa función de compartir no funcionará.";
                 console.warn(placeholderErrorMsg);
-                if (typeof showMessage === 'function') { 
+                if (typeof showMessage === 'function') {    
                     showMessage(placeholderErrorMsg);
                 }
-                supabaseClient = null; 
+                supabaseClient = null;    
             }
         } catch (error) {
             console.error("Error CRÍTICO inicializando Supabase:", error);
             let detail = (error && error.message) ? error.message : (typeof error === 'string' ? error : "Error desconocido.");
             const initErrorMsg = `Error CRÍTICO al inicializar Supabase:\n\n${detail}\n\nLa función de compartir no funcionará.`;
-            if (typeof showMessage === 'function') { 
+            if (typeof showMessage === 'function') {    
                 showMessage(initErrorMsg);
             }
             supabaseClient = null;
@@ -584,7 +656,7 @@
 
         let pdfDoc = null;
         let originalFileName = 'documento.pdf';
-        let originalPdfFileBlob = null; 
+        let originalPdfFileBlob = null;    
         let currentPage = 1;
         let totalPages = 0;
         let scale = 1;
@@ -598,9 +670,9 @@
         let translatePos = { x: 0, y: 0 };
         let isZoomed = false;
 
-        let embeddedSignatures = []; // Contiene las firmas incrustadas del Usuario A y B
-        let signatureBoxEl = null; 
-        let activeSignatureBoxInfo = null; 
+        let embeddedSignatures = []; 
+        let signatureBoxEl = null;    
+        let activeSignatureBoxInfo = null;    
         let isDraggingSigBox = false;
         let isResizingSigBox = false;
         let signatureBoxDragOffset = { x: 0, y: 0 };
@@ -624,19 +696,17 @@
         let pageVisitCounts = {};
         let totalPageViewsSession = 0;
 
-        let sharedDocIdForUserA = null; // Variable crucial para el Usuario A
-        let markerDataForUserB = null; // Variable crucial para el Usuario B
+        let sharedDocIdForUserA = null; 
+        let markerDataForUserB = null; 
 
 
         document.getElementById('file-input').addEventListener('change', function () {
             const file = this.files[0];
             if (file && file.type === 'application/pdf') {
                 originalFileName = file.name;
-                originalPdfFileBlob = file; 
+                originalPdfFileBlob = file;    
                 
-                // Limpiar el ID de documento compartido si se carga un nuevo PDF
                 sharedDocIdForUserA = null;
-                // Al cargar un nuevo PDF, cerramos cualquier listener Realtime anterior
                 if (realtimeSubscription) {
                     realtimeSubscription.unsubscribe();
                     realtimeSubscription = null;
@@ -645,7 +715,7 @@
 
                 const checkBtn = document.getElementById('check-signatures-btn');
                 if (checkBtn) checkBtn.style.display = 'none';
-                markerDataForUserB = null; 
+                markerDataForUserB = null;    
                 const userBArea = document.getElementById('user-b-sig-area');
                 if(userBArea) userBArea.remove();
 
@@ -659,8 +729,8 @@
                         pdfDoc = await loadingTask.promise;
                         totalPages = pdfDoc.numPages;
                         currentPage = 1;
-                        translatePos = { x: 0, y: 0 }; 
-                        scale = 1; 
+                        translatePos = { x: 0, y: 0 };    
+                        scale = 1;    
                         document.getElementById('zoom-slider').value = scale;
                         document.getElementById('total-pages').textContent = totalPages;
                         document.getElementById('current-page').textContent = currentPage;
@@ -670,17 +740,17 @@
                         if (signatureBoxEl) {
                             console.log("[file-input] Removing existing signatureBoxEl due to new file load.");
                             signatureBoxEl.remove();
-                            signatureBoxEl = null; 
+                            signatureBoxEl = null;    
                         }
-                        activeSignatureBoxInfo = null; 
+                        activeSignatureBoxInfo = null;    
                         pageVisitCounts = {};
                         totalPageViewsSession = 0;
-                        updatePageUsageCounters(); 
+                        updatePageUsageCounters();    
                         renderPage(currentPage);
                     } catch (err) {
                         showMessage('Error al cargar el PDF. Asegúrate de que es un archivo PDF válido.');
                         console.error("Error loading PDF:", err);
-                        pdfDoc = null; 
+                        pdfDoc = null;    
                         originalPdfFileBlob = null;
                     }
                 };
@@ -689,7 +759,7 @@
                 showMessage('Por favor, selecciona un archivo PDF.');
                 originalPdfFileBlob = null;
             }
-                this.value = null; 
+                this.value = null;    
         });
 
         function updatePageUsageCounters() {
@@ -700,26 +770,25 @@
             document.getElementById('total-page-views').textContent = `T: ${totalPageViewsSession}`;
         }
 
-        async function renderPage(num) { 
+        async function renderPage(num) {    
             if (!pdfDoc || rendering) return;
             rendering = true;
             
-            // Ocultar el área de firma de Usuario B si existe y no estamos en la página correcta
             const userBArea = document.getElementById('user-b-sig-area');
             if(userBArea) {
                 if (markerDataForUserB && markerDataForUserB.page === num) {
-                    userBArea.style.display = 'flex'; // Mostrar si estamos en la página de su marcador
+                    userBArea.style.display = 'flex'; 
                 } else {
-                    userBArea.style.display = 'none'; // Ocultar si no estamos en la página de su marcador
+                    userBArea.style.display = 'none'; 
                 }
             }
             
-            updatePageUsageCounters(); 
+            updatePageUsageCounters();    
             
             try {
                 const page = await pdfDoc.getPage(num);
-                const dpr = window.devicePixelRatio || 1; 
-                const viewportForRender = page.getViewport({ scale: scale * dpr }); 
+                const dpr = window.devicePixelRatio || 1;    
+                const viewportForRender = page.getViewport({ scale: scale * dpr });    
                 canvas.width = viewportForRender.width;
                 canvas.height = viewportForRender.height;
                 
@@ -734,7 +803,7 @@
 
                 canvas.style.left = (cssCanvasWidth < viewerWidth) ? `${(viewerWidth - cssCanvasWidth) / 2}px` : '0px';
                 canvas.style.top = (cssCanvasHeight < viewerHeight) ? `${(viewerHeight - cssCanvasHeight) / 2}px` : '0px';
-                canvas.style.position = 'absolute'; 
+                canvas.style.position = 'absolute';    
                 
                 const renderContext = { canvasContext: context, viewport: viewportForRender };
                 await page.render(renderContext).promise;
@@ -742,32 +811,32 @@
                 rendering = false;
                 document.getElementById('current-page').textContent = num;
                 isZoomed = scale !== 1 || cssCanvasWidth > viewerWidth || cssCanvasHeight > viewerHeight;
-                updateCanvasTransform(); 
+                updateCanvasTransform();    
 
             } catch (err) {
-                rendering = false; 
-                console.error("Error en renderPage:", err); 
+                rendering = false;    
+                console.error("Error en renderPage:", err);    
                 showMessage("Error al renderizar la página del PDF.");
             }
         }
 
         function updateCanvasTransform() {
             canvas.style.transform = `translate(${translatePos.x}px, ${translatePos.y}px)`;
-            repositionSignatures(); 
-            repositionActiveSignatureBox(); 
-            if (markerDataForUserB && markerDataForUserB.page === currentPage && pdfDoc && !rendering) { 
+            repositionSignatures();    
+            repositionActiveSignatureBox();    
+            if (markerDataForUserB && markerDataForUserB.page === currentPage && pdfDoc && !rendering) {    
                 displayMarkerForUserB(markerDataForUserB);
             }
         }
         
         canvas.addEventListener('mousedown', (e) => {
-            if (isDraggingSigBox || isResizingSigBox || pinchState.active) return; 
+            if (isDraggingSigBox || isResizingSigBox || pinchState.active) return;    
             const cssCanvasWidth = parseFloat(canvas.style.width);
             const cssCanvasHeight = parseFloat(canvas.style.height);
             if (!isZoomed && (cssCanvasWidth <= pdfViewer.clientWidth && cssCanvasHeight <= pdfViewer.clientHeight)) return;
-            if (e.target !== canvas && e.target !== pdfViewer) return; 
+            if (e.target !== canvas && e.target !== pdfViewer) return;    
             isDraggingPdf = true;
-            startPos = { x: e.clientX - translatePos.x,  y: e.clientY - translatePos.y };
+            startPos = { x: e.clientX - translatePos.x,     y: e.clientY - translatePos.y };
             canvas.style.cursor = 'grabbing';
         });
 
@@ -777,18 +846,18 @@
             }
             const userBArea = document.getElementById('user-b-sig-area');
             if (userBArea && (e.target === userBArea || userBArea.contains(e.target))) {
-                return; 
+                return;    
             }
 
-            if (isDraggingSigBox || isResizingSigBox) return; 
-            if (e.touches.length === 2) { 
-                e.preventDefault(); 
-                isDraggingPdf = false; 
+            if (isDraggingSigBox || isResizingSigBox) return;    
+            if (e.touches.length === 2) {    
+                e.preventDefault();    
+                isDraggingPdf = false;    
                 pinchState.active = true;
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 pinchState.initialDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-                pinchState.lastScale = scale; 
+                pinchState.lastScale = scale;    
                 const viewerRect = pdfViewer.getBoundingClientRect();
                 pinchState.screenCenterX = (touch1.clientX + touch2.clientX) / 2;
                 pinchState.screenCenterY = (touch1.clientY + touch2.clientY) / 2;
@@ -797,10 +866,10 @@
                 const pdfPointScreenX = pinchState.screenCenterX - canvasRect.left;
                 const pdfPointScreenY = pinchState.screenCenterY - canvasRect.top;
                 
-                pinchState.pdfPointX = pdfPointScreenX / scale; 
+                pinchState.pdfPointX = pdfPointScreenX / scale;    
                 pinchState.pdfPointY = pdfPointScreenY / scale;
 
-            } else if (e.touches.length === 1 && !pinchState.active) { 
+            } else if (e.touches.length === 1 && !pinchState.active) {    
                 const cssCanvasWidth = parseFloat(canvas.style.width);
                 const cssCanvasHeight = parseFloat(canvas.style.height);
                 if ((cssCanvasWidth <= pdfViewer.clientWidth && cssCanvasHeight <= pdfViewer.clientHeight && scale === 1) || (e.target !== canvas && e.target !== pdfViewer)) {
@@ -810,7 +879,7 @@
                 const touch = e.touches[0];
                 startPos = { x: touch.clientX - translatePos.x, y: touch.clientY - translatePos.y };
             }
-        }, { passive: false }); 
+        }, { passive: false });    
 
         function handlePdfMove(clientX, clientY) {
             if (!isDraggingPdf) return;
@@ -820,40 +889,40 @@
             const viewerHeight = pdfViewer.clientHeight;
             const cssCanvasWidth = parseFloat(canvas.style.width);
             const cssCanvasHeight = parseFloat(canvas.style.height);
-            const overpanMargin = 30; 
+            const overpanMargin = 30;    
             
             if (cssCanvasWidth > viewerWidth) {
-                const minX = viewerWidth - cssCanvasWidth - overpanMargin; 
-                const maxX = overpanMargin; 
+                const minX = viewerWidth - cssCanvasWidth - overpanMargin;    
+                const maxX = overpanMargin;    
                 newTranslateX = Math.max(minX, Math.min(newTranslateX, maxX));
             } else {
-                newTranslateX = (viewerWidth - cssCanvasWidth) / 2; 
+                newTranslateX = (viewerWidth - cssCanvasWidth) / 2;    
             }
 
             if (cssCanvasHeight > viewerHeight) {
-                const minY = viewerHeight - cssCanvasHeight - overpanMargin; 
-                const maxY = overpanMargin; 
+                const minY = viewerHeight - cssCanvasHeight - overpanMargin;    
+                const maxY = overpanMargin;    
                 newTranslateY = Math.max(minY, Math.min(newTranslateY, maxY));
             } else {
-                newTranslateY = (viewerHeight - cssCanvasHeight) / 2; 
+                newTranslateY = (viewerHeight - cssCanvasHeight) / 2;    
             }
             translatePos.x = newTranslateX;
             translatePos.y = newTranslateY;
             updateCanvasTransform();
         }
 
-        async function handlePinchMove(touch1, touch2) { 
+        async function handlePinchMove(touch1, touch2) {    
             if (!pinchState.active || pinchState.initialDistance === 0 || !pdfDoc) return;
             const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
             let newScale = pinchState.lastScale * (currentDistance / pinchState.initialDistance);
-            newScale = Math.min(3.0, Math.max(0.5, parseFloat(newScale.toFixed(2)))); 
+            newScale = Math.min(3.0, Math.max(0.5, parseFloat(newScale.toFixed(2))));    
             
-            if (Math.abs(newScale - scale) < 0.01 && newScale !== 0.5 && newScale !== 3.0) return; 
+            if (Math.abs(newScale - scale) < 0.01 && newScale !== 0.5 && newScale !== 3.0) return;    
             
             const oldScale = scale;
             scale = newScale;
             
-            const viewerRect = pdfViewer.getBoundingClientRect(); 
+            const viewerRect = pdfViewer.getBoundingClientRect();    
             let baseCanvasX = 0;
             let baseCanvasY = 0;
             
@@ -871,24 +940,24 @@
                 translatePos.y = (pinchState.screenCenterY - viewerRect.top - baseCanvasY) - (pinchState.pdfPointY * scale);
                 
                 document.getElementById('zoom-slider').value = scale.toFixed(1);
-                await renderPage(currentPage); 
+                await renderPage(currentPage);    
             } catch(err) {
                 console.error("Error en handlePinchMove al obtener página:", err);
-                scale = oldScale; 
+                scale = oldScale;    
             }
         }
 
         function nextPage() {
             if (!pdfDoc || currentPage >= totalPages) return;
             currentPage++;
-            translatePos = { x: 0, y: 0 }; 
+            translatePos = { x: 0, y: 0 };    
             renderPage(currentPage);
         }
 
         function prevPage() {
             if (!pdfDoc || currentPage <= 1) return;
             currentPage--;
-            translatePos = { x: 0, y: 0 }; 
+            translatePos = { x: 0, y: 0 };    
             renderPage(currentPage);
         }
 
@@ -898,17 +967,21 @@
             scale = parseFloat(this.value);
             
             const viewerRect = pdfViewer.getBoundingClientRect();
-            const canvasRect = canvas.getBoundingClientRect(); 
+            // const canvasRect = canvas.getBoundingClientRect(); // No necesitamos canvasRect si recalculamos desde el centro
             
+            // Punto de zoom: centro del visor
             const screenCenterX = viewerRect.left + viewerRect.width / 2;
             const screenCenterY = viewerRect.top + viewerRect.height / 2;
+
+            // Convertir el punto de zoom (centro del visor) a coordenadas relativas al canvas PREVIO al zoom
+            const canvasRectBeforeZoom = canvas.getBoundingClientRect(); // Coordenadas actuales del canvas
+            const pdfPointX = (screenCenterX - canvasRectBeforeZoom.left) / oldScale;
+            const pdfPointY = (screenCenterY - canvasRectBeforeZoom.top) / oldScale;
             
-            const pdfPointX = (screenCenterX - canvasRect.left) / oldScale;
-            const pdfPointY = (screenCenterY - canvasRect.top) / oldScale;
+            const page = await pdfDoc.getPage(currentPage); // Necesitamos la página para el nuevo viewport
+            const newViewportCss = page.getViewport({scale: scale});    
             
-            const page = await pdfDoc.getPage(currentPage);
-            const newViewportCss = page.getViewport({scale: scale}); 
-            
+            // Calcular la posición base del canvas (centrado si es más pequeño que el visor)
             let expectedCanvasLeft = 0;
             if (newViewportCss.width < viewerRect.width) {
                 expectedCanvasLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -918,40 +991,44 @@
                 expectedCanvasTop = (viewerRect.height - newViewportCss.height) / 2;
             }
             
-            translatePos.x = (mouseXViewer - expectedCanvasLeft) - (pdfPointX * scale);
-            translatePos.y = (mouseYViewer - expectedCanvasTop) - (pdfPointY * scale);
+            // Nueva posición de translatePos para mantener el pdfPointX, pdfPointY en el screenCenterX, screenCenterY
+            translatePos.x = (screenCenterX - viewerRect.left - expectedCanvasLeft) - (pdfPointX * scale);
+            translatePos.y = (screenCenterY - viewerRect.top - expectedCanvasTop) - (pdfPointY * scale);
             
-            document.getElementById('zoom-slider').value = scale.toFixed(1);
-            await renderPage(currentPage); 
-            pinchState.lastScale = scale; 
+            // document.getElementById('zoom-slider').value = scale.toFixed(1); // Ya está siendo actualizado por el input
+            await renderPage(currentPage);    
+            pinchState.lastScale = scale; // Actualizar para consistencia con pellizco
         });
+
 
         pdfViewer.addEventListener('wheel', async function (e) {
             if (!pdfDoc) return;
-            e.preventDefault(); 
+            e.preventDefault();    
             const oldScale = scale;
-            const delta = e.deltaY > 0 ? -0.1 : 0.1; 
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;    
             let newScale = parseFloat((scale + delta).toFixed(2));
-            newScale = Math.min(3.0, Math.max(0.5, newScale)); 
+            newScale = Math.min(3.0, Math.max(0.5, newScale));    
             
-            if (Math.abs(newScale - oldScale) < 0.01 && newScale !==0.5 && newScale !== 3.0) return; 
+            if (Math.abs(newScale - oldScale) < 0.01 && newScale !==0.5 && newScale !== 3.0) return;    
             
             const viewerRect = pdfViewer.getBoundingClientRect();
-            const mouseXViewer = e.clientX - viewerRect.left; 
-            const mouseYViewer = e.clientY - viewerRect.top; 
+            const mouseXViewer = e.clientX - viewerRect.left;    // Posición del mouse relativa al VISOR
+            const mouseYViewer = e.clientY - viewerRect.top;    
             
-            const canvasRect = canvas.getBoundingClientRect(); 
-            const mouseXOnCanvas = e.clientX - canvasRect.left; 
-            const mouseYOnCanvas = e.clientY - canvasRect.top; 
+            const canvasRect = canvas.getBoundingClientRect();    // Coordenadas actuales del canvas
+            const mouseXOnCanvas = e.clientX - canvasRect.left;    // Posición del mouse relativa al CANVAS
+            const mouseYOnCanvas = e.clientY - canvasRect.top;    
             
+            // Punto del PDF (coordenadas no escaladas) bajo el cursor
             const pdfPointX = mouseXOnCanvas / oldScale;
             const pdfPointY = mouseYOnCanvas / oldScale;
             
-            scale = newScale; 
+            scale = newScale;    
             
             const page = await pdfDoc.getPage(currentPage);
-            const newViewportCss = page.getViewport({ scale: scale }); 
+            const newViewportCss = page.getViewport({ scale: scale });    
             
+            // Calcular la posición base del canvas (centrado si es más pequeño que el visor)
             let expectedCanvasLeft = 0;
             if (newViewportCss.width < viewerRect.width) {
                 expectedCanvasLeft = (viewerRect.width - newViewportCss.width) / 2;
@@ -961,25 +1038,26 @@
                 expectedCanvasTop = (viewerRect.height - newViewportCss.height) / 2;
             }
             
+            // Nueva posición de translatePos para mantener el pdfPointX, pdfPointY bajo el cursor (mouseXViewer, mouseYViewer)
             translatePos.x = (mouseXViewer - expectedCanvasLeft) - (pdfPointX * scale);
             translatePos.y = (mouseYViewer - expectedCanvasTop) - (pdfPointY * scale);
             
             document.getElementById('zoom-slider').value = scale.toFixed(1);
-            await renderPage(currentPage); 
-        }, { passive: false }); 
+            await renderPage(currentPage);    
+        }, { passive: false });    
 
         async function getProcessedPdfBlob() {
             if (!pdfDoc) {
                 showMessage("Carga un PDF primero.");
                 return null;
             }
-            const { jsPDF } = window.jspdf; 
-            const newPdfDocGen = new jsPDF(); 
+            const { jsPDF } = window.jspdf;    
+            const newPdfDocGen = new jsPDF();    
             while (newPdfDocGen.getNumberOfPages() > 0) { newPdfDocGen.deletePage(1); }
             
             for (let i = 1; i <= totalPages; i++) {
                 const page = await pdfDoc.getPage(i);
-                const downloadScale = 2.0; 
+                const downloadScale = 2.0;    // Escala alta para buena calidad en el PDF final
                 const viewport = page.getViewport({ scale: downloadScale });
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
@@ -988,7 +1066,6 @@
                 
                 await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
                 
-                // Incluir firmas del Usuario A y B
                 const signaturesForPage = embeddedSignatures.filter(sig => sig.page === i);
                 for (const sigInfo of signaturesForPage) {
                     const img = new Image();
@@ -1003,8 +1080,7 @@
                             };
                             img.src = sigInfo.dataURL;
                         });
-                        // Coordenadas de la firma en la página (ya están en unidades PDF con el escalado original)
-                        const x = sigInfo.x * downloadScale;
+                        const x = sigInfo.x * downloadScale; // Escalar coordenadas de la firma
                         const y = sigInfo.y * downloadScale;
                         const width = sigInfo.width * downloadScale;
                         const height = sigInfo.height * downloadScale;
@@ -1014,7 +1090,7 @@
                     }
                 }
                 
-                const imgData = tempCanvas.toDataURL('image/jpeg', 0.9); 
+                const imgData = tempCanvas.toDataURL('image/jpeg', 0.9);    
                 newPdfDocGen.addPage([viewport.width, viewport.height], viewport.width > viewport.height ? 'l' : 'p');
                 newPdfDocGen.addImage(imgData, 'JPEG', 0, 0, viewport.width, viewport.height);
             }
@@ -1031,7 +1107,7 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                URL.revokeObjectURL(link.href); 
+                URL.revokeObjectURL(link.href);    
                 showMessage("PDF guardado.");
             } else {
                 if(pdfDoc) showMessage("No se pudo generar el PDF para descargar.");
@@ -1089,7 +1165,7 @@
 
 
             if (!markerToShare) {
-                let reason = "No se encontró un cuadro de firma confirmado (estático) para compartir."; 
+                let reason = "No se encontró un cuadro de firma confirmado (estático) para compartir.";    
                 
                 if (!signatureBoxEl) {
                     reason = "No hay ningún cuadro de firma en la página. Debe añadir uno (✍️) y luego confirmarlo (✔️).";
@@ -1097,27 +1173,27 @@
                     reason = "El cuadro de firma actual es azul (editable). Primero debe confirmarlo (con ✔️) para que se vuelva de borde discontinuo y pueda ser compartido.";
                 } else if (!activeSignatureBoxInfo || activeSignatureBoxInfo.element !== signatureBoxEl) {
                     reason = "El cuadro de firma está confirmado, pero hay una inconsistencia con sus datos internos. Intente editarlo (✏️) y confirmarlo (✔️) de nuevo.";
-                } else { 
+                } else {    
                     if (activeSignatureBoxInfo && (activeSignatureBoxInfo.page < 1 || activeSignatureBoxInfo.page > totalPages)) {
-                                reason = "La página registrada para el cuadro de firma confirmado es inválida.";
+                                    reason = "La página registrada para el cuadro de firma confirmado es inválida.";
                     } else {
-                                reason = "No se pudo preparar el cuadro de firma confirmado para compartir por una razón desconocida.";
+                                    reason = "No se pudo preparar el cuadro de firma confirmado para compartir por una razón desconocida.";
                     }
                 }
                 
-                console.error("SharePDF: FALLO AL PREPARAR MARCADOR. Razón: " + reason, 
-                                "signatureBoxEl:", signatureBoxEl, 
+                console.error("SharePDF: FALLO AL PREPARAR MARCADOR. Razón: " + reason,    
+                                "signatureBoxEl:", signatureBoxEl,    
                                 "activeSignatureBoxInfo:", activeSignatureBoxInfo);
                 
                 showMessage("Para compartir con Usuario B:\n1. Usa '✍️ Añadir Firma' (aparece cuadro azul).\n2. Posiciona y dimensiona el cuadro azul.\n3. Haz clic en ✔️ sobre el cuadro azul para confirmarlo (se volverá de borde discontinuo).\n4. SOLO ENTONCES, presiona '📤 Compartir'.\n\n" +
-                                    "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
-                                    "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
+                                        "AYUDA: El cuadro que se comparte es el de borde discontinuo (estático). Si solo ves el cuadro azul, primero confírmalo.\n\n" +
+                                        "(Diagnóstico: " + reason.split('(')[0].trim() + ")");
                 return;
             }
             
-            showMessage("Preparando documento para compartir..."); // Este mensaje se mostrará brevemente
+            showMessage("Preparando documento para compartir..."); 
             const documentId = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-            sharedDocIdForUserA = documentId; // Se establece para la sesión actual del Usuario A
+            sharedDocIdForUserA = documentId; 
             const sanitizedFileName = originalFileName.replace(/[^a-zA-Z0-9._-]/g, '_');
             const originalPdfStoragePath = `documents/${documentId}/${sanitizedFileName}`;
 
@@ -1137,7 +1213,7 @@
                 const markerForDb = {
                     doc_id: documentId,
                     marker_id: `marker_userb_${Date.now()}`,
-                    pdf_storage_path: uploadData.path, 
+                    pdf_storage_path: uploadData.path,    
                     ...markerToShare
                 };
                 console.log("[sharePDF] Intentando insertar en signature_markers:", markerForDb);
@@ -1151,48 +1227,34 @@
                 }
                 console.log("Información del marcador para Usuario B guardada.");
 
-                // ----- INICIO DE LA MODIFICACIÓN PARA ABRIR NUEVA PESTAÑA -----
-                // URL que el Usuario B usará para firmar (la misma que antes)
                 const signingPageUrlForUserB = `${window.location.origin}${window.location.pathname}?doc_id=${documentId}&mode=sign_for_user_b`;
-
-                // Nombre de tu página generadora de enlaces/QR (asegúrate que este archivo exista en tu proyecto)
-                const generatorPageFileName = 'generador_enlace_firma.html'; 
-
-                // Construir la URL para la página generadora
-                // Esto asume que 'generador_enlace_firma.html' está en el mismo directorio que 'index.html'
+                const generatorPageFileName = 'generador_enlace_firma.html';    
                 const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
                 const generatorPageUrl = `${window.location.origin}${basePath}${generatorPageFileName}?signUrl=${encodeURIComponent(signingPageUrlForUserB)}&docId=${encodeURIComponent(documentId)}`;
                 
-                // Guardar el ID del documento compartido en localStorage para Usuario A (opcional, para restaurar estado si vuelve)
                 if (typeof Storage !== "undefined") {
                     localStorage.setItem('lastSharedDocIdForUserA', documentId);
                 }
 
-                // Abrir la página generadora en una nueva pestaña/ventana
                 const newShareWindow = window.open(generatorPageUrl, '_blank');
 
                 if (newShareWindow) {
-                    newShareWindow.focus(); // Intenta traer la nueva pestaña al frente
-                    // Mensaje en la página original (index.html) informando al usuario
-                    showMessage("Generando enlace para compartir en una nueva pestaña...\nEsta se cerrará automáticamente después de unos segundos.");
+                    newShareWindow.focus(); 
+                    showMessage("Generando enlace para compartir en una nueva pestaña..."); // Mensaje simplificado
                 } else {
-                    // En caso de que el navegador bloquee el pop-up
                     showMessage("No se pudo abrir la nueva pestaña para compartir.\nPor favor, revisa si tu navegador está bloqueando ventanas emergentes e inténtalo de nuevo.");
                 }
                 
                 const checkBtn = document.getElementById('check-signatures-btn');
-                if (checkBtn) checkBtn.style.display = 'inline-block'; // Usuario A puede querer verificar firmas después
+                if (checkBtn) checkBtn.style.display = 'inline-block'; 
 
-                // Después de compartir, configuramos el listener Realtime para este documento
                 setupRealtimeListener();
 
-                // ----- FIN DE LA MODIFICACIÓN PARA ABRIR NUEVA PESTAÑA -----
-
-            } catch (error) { 
+            } catch (error) {    
                 console.error("Excepción detallada en sharePDF (operaciones Supabase):", error);
                 let specificMessage = "Error desconocido durante la operación de compartir.";
                 if (error && error.message) {
-                    specificMessage = error.message; 
+                    specificMessage = error.message;    
                 }
 
                 if (specificMessage.includes("No message property, ver consola para objeto de error completo")) {
@@ -1203,35 +1265,34 @@
                 
                 if (error && error.message && (error.message.includes("guardar marcador") || error.message.includes("signature_markers") || error.message.includes("No message property"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL GUARDAR MARCADOR:\n" +
-                                        "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
-                                        "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
-                                        "    Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
-                                        "3. Problema de conexión o con el servicio de Supabase.\n\n" +
-                                        "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
+                                    "1. Políticas de Seguridad a Nivel de Fila (RLS) en la tabla 'signature_markers' que impiden la inserción. Debes permitir inserciones para el rol 'anon'.\n" +
+                                    "2. La tabla 'signature_markers' o sus columnas no están definidas correctamente en Supabase (nombres, tipos de datos, restricciones NOT NULL como 'id', 'created_at', etc.).\n" +
+                                    "   Columnas esperadas: doc_id (text), marker_id (text, primary key), pdf_storage_path (text), page (int), x_coord (numeric), y_coord (numeric), width_val (numeric), height_val (numeric), status (text).\n" +
+                                    "3. Problema de conexión o con el servicio de Supabase.\n\n" +
+                                    "ACCIÓN: Revisa la configuración de tu tabla 'signature_markers' en Supabase Studio (Editor de Tablas y Políticas RLS). Verifica también los Logs de la Base de Datos en Supabase. La consola del navegador tiene más detalles del error original (busca 'Raw Supabase insert error').";
                 } else if (error && error.message && (error.message.includes("subir PDF original") || error.message.includes("Storage"))) {
                     userMessage += "POSIBLES CAUSAS DEL FALLO AL SUBIR PDF:\n" +
-                                        "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
-                                        "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
-                                        "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
+                                    "1. El bucket 'pdfs' no existe en Supabase Storage.\n" +
+                                    "2. Políticas de acceso al bucket 'pdfs' que impiden la subida.\n\n" +
+                                    "ACCIÓN: Revisa la configuración de tu bucket 'pdfs' en Supabase Storage.";
                 }
                 showMessage(userMessage);
             }
         }
-
+        
         function addSignatureBox() {
             console.log('[addSignatureBox] Llamada. Estado actual de signatureBoxEl:', signatureBoxEl);
             if (!pdfDoc) {
                 showMessage("Por favor, carga un documento PDF primero.");
                 return;
             }
-            // Asegúrate de que el cuadro de usuario B no esté activo si Usuario A intenta añadir su firma
             const userBArea = document.getElementById('user-b-sig-area');
             if (userBArea) {
-                userBArea.remove(); // Eliminar el marcador de Usuario B si existe
-                markerDataForUserB = null; // Limpiar los datos del marcador de Usuario B
+                userBArea.remove(); 
+                markerDataForUserB = null; 
             }
 
-            if (signatureBoxEl) { 
+            if (signatureBoxEl) {    
                 console.log('[addSignatureBox] Hay un signatureBoxEl existente, se removerá.');
                 try {
                     signatureBoxEl.remove();
@@ -1239,37 +1300,37 @@
                     console.warn('[addSignatureBox] Error al remover signatureBoxEl existente del DOM:', e);
                 }
             }
-            signatureBoxEl = null; 
-            activeSignatureBoxInfo = null; 
+            signatureBoxEl = null;    
+            activeSignatureBoxInfo = null;    
 
             try {
-                signatureBoxEl = document.createElement('div'); 
+                signatureBoxEl = document.createElement('div');    
                 signatureBoxEl.className = 'signature-box';
-                signatureBoxEl.style.width = '150px'; 
+                signatureBoxEl.style.width = '150px';    
                 signatureBoxEl.style.height = '75px';
                 
                 const viewerRect = pdfViewer.getBoundingClientRect();
-                if (!pdfViewer || (viewerRect.width === 0 && viewerRect.height === 0 && !pdfViewer.offsetParent)) { 
+                if (!pdfViewer || (viewerRect.width === 0 && viewerRect.height === 0 && !pdfViewer.offsetParent)) {    
                     console.error("[addSignatureBox] pdfViewer no está disponible, no tiene dimensiones o no está visible.");
                     showMessage("Error: El visor de PDF no está listo para añadir una firma.");
-                    signatureBoxEl = null; 
+                    signatureBoxEl = null;    
                     return;
                 }
-                signatureBoxEl.style.left = `${Math.max(0, (viewerRect.width - 150) / 2)}px`; 
+                signatureBoxEl.style.left = `${Math.max(0, (viewerRect.width - 150) / 2)}px`;    
                 signatureBoxEl.style.top = `${Math.max(0, (viewerRect.height - 75) / 2)}px`;
                 
-                pdfViewer.appendChild(signatureBoxEl); 
+                pdfViewer.appendChild(signatureBoxEl);    
                 console.log('[addSignatureBox] Nuevo signatureBoxEl creado y añadido al DOM. Referencia actual:', signatureBoxEl);
 
-                makeSignatureBoxEditable(signatureBoxEl); 
+                makeSignatureBoxEditable(signatureBoxEl);    
                 console.log('[addSignatureBox] makeSignatureBoxEditable llamado. signatureBoxEl debería ser el nuevo cuadro.');
             } catch (error) {
                 console.error('[addSignatureBox] ERROR CRÍTICO durante la creación/configuración del cuadro:', error);
                 showMessage('Se produjo un error crítico al intentar añadir el cuadro de firma. Revise la consola.');
                 if (signatureBoxEl && signatureBoxEl.parentElement) {
-                    signatureBoxEl.remove(); 
+                    signatureBoxEl.remove();    
                 }
-                signatureBoxEl = null; 
+                signatureBoxEl = null;    
             }
         }
         
@@ -1278,9 +1339,9 @@
                 return;
             }
             const sig = activeSignatureBoxInfo;
-            const boxEl = sig.element; 
+            const boxEl = sig.element;    
             if (sig.page === currentPage) {
-                const canvasRect = canvas.getBoundingClientRect(); 
+                const canvasRect = canvas.getBoundingClientRect();    
                 const viewerRect = pdfViewer.getBoundingClientRect();
                 const displayX = (sig.x * scale) + (canvasRect.left - viewerRect.left);
                 const displayY = (sig.y * scale) + (canvasRect.top - viewerRect.top);
@@ -1297,81 +1358,81 @@
             }
         }
 
-        function confirmSignatureBoxPlacement(boxEl) { 
+        function confirmSignatureBoxPlacement(boxEl) {    
             console.log('[confirmSignatureBoxPlacement] Confirmando. El cuadro azul es:', boxEl);
-            if (!boxEl || !pdfDoc) return; 
+            if (!boxEl || !pdfDoc) return;    
             const handles = boxEl.querySelectorAll('.resize-handle');
             handles.forEach(h => h.remove());
-            boxEl.classList.add('position-confirmed'); 
+            boxEl.classList.add('position-confirmed');    
             
             const canvasRect = canvas.getBoundingClientRect();
-            const boxRect = boxEl.getBoundingClientRect(); 
+            const boxRect = boxEl.getBoundingClientRect();    
             
-            const boxRelToCanvasX = (boxRect.left - canvasRect.left) / scale; 
+            const boxRelToCanvasX = (boxRect.left - canvasRect.left) / scale;    
             const boxRelToCanvasY = (boxRect.top - canvasRect.top) / scale;
             const pdfWidth = boxRect.width / scale;
             const pdfHeight = boxRect.height / scale;
             
-            activeSignatureBoxInfo = { 
-                element: boxEl, 
+            activeSignatureBoxInfo = {    
+                element: boxEl,    
                 page: currentPage,
-                x: boxRelToCanvasX, 
-                y: boxRelToCanvasY, 
-                width: pdfWidth, 
-                height: pdfHeight 
+                x: boxRelToCanvasX,    
+                y: boxRelToCanvasY,    
+                width: pdfWidth,    
+                height: pdfHeight    
             };
             console.log('[confirmSignatureBoxPlacement] activeSignatureBoxInfo establecido:', activeSignatureBoxInfo);
             console.log('[confirmSignatureBoxPlacement] signatureBoxEl (ahora es el cuadro confirmado/estático) es:', signatureBoxEl);
 
-            repositionActiveSignatureBox(); 
+            repositionActiveSignatureBox();    
             
             let controls = boxEl.querySelector('.signature-box-controls');
-            if (!controls) { 
+            if (!controls) {    
                 controls = document.createElement('div');
                 controls.className = 'signature-box-controls';
                 boxEl.appendChild(controls);
             }
-            controls.innerHTML = ''; 
+            controls.innerHTML = '';    
             
             const drawBtn = document.createElement('button');
             drawBtn.className = 'signature-box-btn draw';
-            drawBtn.innerHTML = '✍️'; 
-            drawBtn.title = 'Dibujar Firma';
+            drawBtn.innerHTML = '✍️';    
+            drawBtn.title = 'Dibujar Firma'; // Corregido
             drawBtn.onclick = (e) => { e.stopPropagation(); openSignatureModal(); };
             
             const editPosBtn = document.createElement('button');
             editPosBtn.className = 'signature-box-btn edit';
-            editPosBtn.innerHTML = '✏️'; 
-            drawBtn.title = 'Editar Posición';
-            editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); }; 
+            editPosBtn.innerHTML = '✏️';    
+            editPosBtn.title = 'Editar Posición'; // Añadido
+            editPosBtn.onclick = (e) => { e.stopPropagation(); makeSignatureBoxEditable(boxEl); };    
             
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'signature-box-btn cancel';
-            cancelBtn.innerHTML = '❌'; 
-            drawBtn.title = 'Cancelar/Eliminar esta área de firma';
-            cancelBtn.onclick = (e) => { 
-                e.stopPropagation(); 
+            cancelBtn.innerHTML = '❌';    
+            cancelBtn.title = 'Cancelar/Eliminar esta área de firma'; // Añadido
+            cancelBtn.onclick = (e) => {    
+                e.stopPropagation();    
                 console.log('[confirmSignatureBoxPlacement > cancelBtn] Removiendo cuadro confirmado y anulando signatureBoxEl.');
-                boxEl.remove(); 
-                signatureBoxEl = null; 
-                activeSignatureBoxInfo = null; 
+                boxEl.remove();    
+                signatureBoxEl = null;    
+                activeSignatureBoxInfo = null;    
             };
             controls.appendChild(drawBtn);
             controls.appendChild(editPosBtn);
             controls.appendChild(cancelBtn);
         }
 
-        function makeSignatureBoxEditable(boxEl) { 
+        function makeSignatureBoxEditable(boxEl) {    
             console.log('[makeSignatureBoxEditable] Haciendo editable. El cuadro es:', boxEl);
             if (!boxEl) {
                 console.warn('[makeSignatureBoxEditable] boxEl es null, no se puede hacer editable.');
                 return;
             }
-            activeSignatureBoxInfo = null; 
-            boxEl.classList.remove('position-confirmed'); 
-            boxEl.style.cursor = 'move'; 
-            boxEl.querySelectorAll('.resize-handle').forEach(h => h.remove()); 
-            addResizeHandlesToSigBox(boxEl); 
+            activeSignatureBoxInfo = null;    
+            boxEl.classList.remove('position-confirmed');    
+            boxEl.style.cursor = 'move';    
+            boxEl.querySelectorAll('.resize-handle').forEach(h => h.remove());    
+            addResizeHandlesToSigBox(boxEl);    
             
             console.log('[makeSignatureBoxEditable] signatureBoxEl (ahora azul) es:', signatureBoxEl);
 
@@ -1381,49 +1442,49 @@
                 controls.className = 'signature-box-controls';
                 boxEl.appendChild(controls);
             }
-            controls.innerHTML = ''; 
+            controls.innerHTML = '';    
             
             const confirmPlacementBtn = document.createElement('button');
             confirmPlacementBtn.className = 'signature-box-btn confirm';
-            confirmPlacementBtn.innerHTML = '✔️'; 
-            drawBtn.title = 'Confirmar Posición';
+            confirmPlacementBtn.innerHTML = '✔️';    
+            confirmPlacementBtn.title = 'Confirmar Posición'; // CORREGIDO (antes drawBtn.title)
             confirmPlacementBtn.onclick = (e) => { e.stopPropagation(); confirmSignatureBoxPlacement(boxEl); };
             
-            const cancelBtn = document.createElement('button'); 
+            const cancelBtn = document.createElement('button');    
             cancelBtn.className = 'signature-box-btn cancel';
-            cancelBtn.innerHTML = '🗑️'; 
-            drawBtn.title = 'Eliminar este cuadro azul';
-            cancelBtn.onclick = (e) => { 
-                e.stopPropagation(); 
+            cancelBtn.innerHTML = '🗑️';    
+            cancelBtn.title = 'Eliminar este cuadro azul'; // CORREGIDO (antes drawBtn.title)
+            cancelBtn.onclick = (e) => {    
+                e.stopPropagation();    
                 console.log('[makeSignatureBoxEditable > cancelBtn] Removiendo cuadro azul y anulando signatureBoxEl.');
-                boxEl.remove(); 
-                signatureBoxEl = null; 
-                activeSignatureBoxInfo = null; 
+                boxEl.remove();    
+                signatureBoxEl = null;    
+                activeSignatureBoxInfo = null;    
             };
             controls.appendChild(confirmPlacementBtn);
             controls.appendChild(cancelBtn);
-            setupSigBoxDragEvents(boxEl); 
+            setupSigBoxDragEvents(boxEl);    
             console.log('[makeSignatureBoxEditable] Terminado. signatureBoxEl (debería ser azul y editable):', signatureBoxEl);
         }
         
-        const _onSigBoxDragMove = (e) => { 
+        const _onSigBoxDragMove = (e) => {    
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             handleSigBoxDragMove(clientX, clientY);
         };
-        const _onSigBoxDragEnd = () => { 
+        const _onSigBoxDragEnd = () => {    
             isDraggingSigBox = false;
             window.removeEventListener('mousemove', _onSigBoxDragMove);
             window.removeEventListener('touchmove', _onSigBoxDragMove);
             window.removeEventListener('mouseup', _onSigBoxDragEnd);
             window.removeEventListener('touchend', _onSigBoxDragEnd);
         };
-        const _onSigBoxResizeMove = (e) => { 
+        const _onSigBoxResizeMove = (e) => {    
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             handleSigBoxResizeMove(clientX, clientY);
         };
-        const _onSigBoxResizeEnd = () => { 
+        const _onSigBoxResizeEnd = () => {    
             isResizingSigBox = false;
             resizeHandleTypeSigBox = null;
             window.removeEventListener('mousemove', _onSigBoxResizeMove);
@@ -1433,19 +1494,19 @@
         };
 
         function addResizeHandlesToSigBox(box) {
-            const handles = ['nw', 'ne', 'sw', 'se']; 
+            const handles = ['nw', 'ne', 'sw', 'se'];    
             handles.forEach(pos => {
                 const handle = document.createElement('div');
                 handle.className = `resize-handle ${pos}`;
                 box.appendChild(handle);
                 handle.addEventListener('mousedown', (e) => {
-                    e.stopImmediatePropagation(); 
+                    e.stopImmediatePropagation();    
                     initSigBoxResize(e.clientX, e.clientY, pos, box);
                 });
                 handle.addEventListener('touchstart', (e) => {
                     e.stopImmediatePropagation();
                     if (e.touches.length === 1) {
-                        e.preventDefault(); 
+                        e.preventDefault();    
                         initSigBoxResize(e.touches[0].clientX, e.touches[0].clientY, pos, box);
                     }
                 }, { passive: false });
@@ -1453,7 +1514,7 @@
         }
 
         function initSigBoxResize(clientX, clientY, handlePos, box) {
-            if (box.classList.contains('position-confirmed')) return; 
+            if (box.classList.contains('position-confirmed')) return;    
             isResizingSigBox = true;
             resizeHandleTypeSigBox = handlePos;
             startBoxPosSigBox = { x: box.offsetLeft, y: box.offsetTop };
@@ -1476,25 +1537,25 @@
             let newHeight = startBoxSizeSigBox.height;
             let newLeft = startBoxPosSigBox.x;
             let newTop = startBoxPosSigBox.y;
-            const minWidth = 50; 
-            const minHeight = 30; 
+            const minWidth = 50;    
+            const minHeight = 30;    
             const viewerRect = pdfViewer.getBoundingClientRect();
-            if (resizeHandleTypeSigBox.includes('w')) { 
+            if (resizeHandleTypeSigBox.includes('w')) {    
                 newWidth = Math.max(minWidth, startBoxSizeSigBox.width - deltaX);
                 newLeft = startBoxPosSigBox.x + (startBoxSizeSigBox.width - newWidth);
             }
-            if (resizeHandleTypeSigBox.includes('e')) { 
+            if (resizeHandleTypeSigBox.includes('e')) {    
                 newWidth = Math.max(minWidth, startBoxSizeSigBox.width + deltaX);
             }
-            if (resizeHandleTypeSigBox.includes('n')) { 
+            if (resizeHandleTypeSigBox.includes('n')) {    
                 newHeight = Math.max(minHeight, startBoxSizeSigBox.height - deltaY);
                 newTop = startBoxPosSigBox.y + (startBoxSizeSigBox.height - newHeight);
             }
-            if (resizeHandleTypeSigBox.includes('s')) { 
+            if (resizeHandleTypeSigBox.includes('s')) {    
                 newHeight = Math.max(minHeight, startBoxSizeSigBox.height + deltaY);
             }
-            if (newLeft < 0) { newWidth += newLeft; newLeft = 0; } 
-            if (newTop < 0) { newHeight += newTop; newTop = 0; } 
+            if (newLeft < 0) { newWidth += newLeft; newLeft = 0; }    
+            if (newTop < 0) { newHeight += newTop; newTop = 0; }    
             if (newLeft + newWidth > viewerRect.width) { newWidth = viewerRect.width - newLeft; }
             if (newTop + newHeight > viewerRect.height) { newHeight = viewerRect.height - newTop; }
             newWidth = Math.max(minWidth, newWidth);
@@ -1507,14 +1568,14 @@
 
         function setupSigBoxDragEvents(box) {
             function initSigBoxDrag(clientX, clientY) {
-                if (box.classList.contains('position-confirmed')) return; 
+                if (box.classList.contains('position-confirmed')) return;    
                 isDraggingSigBox = true;
                 const viewerRect = pdfViewer.getBoundingClientRect();
                 signatureBoxDragOffset.x = clientX - viewerRect.left - box.offsetLeft;
                 signatureBoxDragOffset.y = clientY - viewerRect.top - box.offsetTop;
-                isDraggingPdf = false; 
-                isResizingSigBox = false; 
-                pinchState.active = false; 
+                isDraggingPdf = false;    
+                isResizingSigBox = false;    
+                pinchState.active = false;    
                 window.addEventListener('mousemove', _onSigBoxDragMove);
                 window.addEventListener('touchmove', _onSigBoxDragMove, { passive: false });
                 window.addEventListener('mouseup', _onSigBoxDragEnd);
@@ -1522,14 +1583,14 @@
             }
             box.addEventListener('mousedown', (e) => {
                 if (e.target === box && !box.classList.contains('position-confirmed')) {
-                    e.stopImmediatePropagation(); 
+                    e.stopImmediatePropagation();    
                     initSigBoxDrag(e.clientX, e.clientY);
                 }
             });
             box.addEventListener('touchstart', (e) => {
                 if (e.target === box && e.touches.length === 1 && !box.classList.contains('position-confirmed')) {
                     e.stopImmediatePropagation();
-                    e.preventDefault(); 
+                    e.preventDefault();    
                     initSigBoxDrag(e.touches[0].clientX, e.touches[0].clientY);
                 }
             }, { passive: false });
@@ -1546,7 +1607,7 @@
             signatureBoxEl.style.top = `${newTop}px`;
         }
 
-        function openSignatureModal() { 
+        function openSignatureModal() {    
             if (!activeSignatureBoxInfo) {
                 if (signatureBoxEl && !signatureBoxEl.classList.contains('position-confirmed')) {
                     showMessage("Primero debe confirmar la posición del cuadro de firma (botón ✔️ del cuadro azul) antes de poder dibujar en él.");
@@ -1579,13 +1640,15 @@
             clearBtn.textContent = '↩️ Limpiar';
             clearBtn.onclick = () => {
                 const dpr = window.devicePixelRatio || 1;
+                // Clear con el reescalado de dpr
                 signaturePadCtxEl.clearRect(0, 0, signaturePadCanvasEl.width / dpr , signaturePadCanvasEl.height / dpr );
+
             };
             
             const confirmBtn = document.createElement('button');
             confirmBtn.className = 'signature-control-btn confirm';
             confirmBtn.textContent = '✔️ Firmar';
-            confirmBtn.onclick = embedSignature; 
+            confirmBtn.onclick = embedSignature;    
             
             controls.appendChild(cancelBtn);
             controls.appendChild(clearBtn);
@@ -1601,17 +1664,17 @@
                 signaturePadCanvasEl.height = rect.height * dpr;
                 signaturePadCanvasEl.style.width = `${rect.width}px`;
                 signaturePadCanvasEl.style.height = `${rect.height}px`;
-                signaturePadCtxEl.scale(dpr, dpr); 
-                signaturePadCtxEl.lineWidth = 1.5; 
-                signaturePadCtxEl.lineCap = 'round'; 
-                signaturePadCtxEl.lineJoin = 'round'; 
-                signaturePadCtxEl.strokeStyle = '#000000'; 
+                signaturePadCtxEl.scale(dpr, dpr);    
+                signaturePadCtxEl.lineWidth = 1.8; // Ligeramente más grueso    
+                signaturePadCtxEl.lineCap = 'round';    
+                signaturePadCtxEl.lineJoin = 'round';    
+                signaturePadCtxEl.strokeStyle = '#000000';    
             });
-            setupSignaturePadDrawingEventsEl(); 
+            setupSignaturePadDrawingEventsEl();    
         }
 
         function setupSignaturePadDrawingEventsEl() {
-            function getPadPosition(e) { 
+            function getPadPosition(e) {    
                 const rect = signaturePadCanvasEl.getBoundingClientRect();
                 let clientX, clientY;
                 if (e.type.startsWith('touch')) {
@@ -1622,7 +1685,7 @@
                     clientY = e.clientY;
                 }
                 return {
-                    x: (clientX - rect.left), 
+                    x: (clientX - rect.left),    
                     y: (clientY - rect.top)
                 };
             }
@@ -1630,7 +1693,7 @@
                 e.preventDefault();
                 isDrawingOnPadEl = true;
                 lastDrawPadPosEl = getPadPosition(e);
-                signaturePadCtxEl.beginPath(); 
+                signaturePadCtxEl.beginPath();    
                 signaturePadCtxEl.moveTo(lastDrawPadPosEl.x, lastDrawPadPosEl.y);
             }
             function drawOnPad(e) {
@@ -1638,7 +1701,7 @@
                 e.preventDefault();
                 const currentPos = getPadPosition(e);
                 signaturePadCtxEl.lineTo(currentPos.x, currentPos.y);
-                signaturePadCtxEl.stroke(); 
+                signaturePadCtxEl.stroke();    
                 lastDrawPadPosEl = currentPos;
             }
             function stopPadDraw() {
@@ -1649,22 +1712,21 @@
             signaturePadCanvasEl.addEventListener('mousedown', startPadDraw);
             signaturePadCanvasEl.addEventListener('mousemove', drawOnPad);
             signaturePadCanvasEl.addEventListener('mouseup', stopPadDraw);
-            signaturePadCanvasEl.addEventListener('mouseout', stopPadDraw); 
+            signaturePadCanvasEl.addEventListener('mouseout', stopPadDraw);    
             signaturePadCanvasEl.addEventListener('touchstart', startPadDraw, { passive: false });
             signaturePadCanvasEl.addEventListener('touchmove', drawOnPad, { passive: false });
             signaturePadCanvasEl.addEventListener('touchend', stopPadDraw);
         }
 
-        function embedSignature(isUserBSignature = false, markerInfo = null) { 
+        function embedSignature(isUserBSignature = false, markerInfo = null) {    
             const tempCanvasTest = document.createElement('canvas');
-            tempCanvasTest.width = signaturePadCanvasEl.width; 
+            tempCanvasTest.width = signaturePadCanvasEl.width;    
             tempCanvasTest.height = signaturePadCanvasEl.height;
             const blankDataURL = tempCanvasTest.toDataURL();
             
-            // Si es firma de Usuario B, usamos el markerInfo, de lo contrario, activeSignatureBoxInfo
             const targetInfo = isUserBSignature ? markerInfo : activeSignatureBoxInfo;
 
-            if (!targetInfo) { 
+            if (!targetInfo) {    
                 showMessage("Error: No hay información del cuadro de firma activo para incrustar la firma.");
                 if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
                 return;
@@ -1674,60 +1736,68 @@
                 return;
             }
 
-            const dataURL = signaturePadCanvasEl.toDataURL('image/png'); 
+            const dataURL = signaturePadCanvasEl.toDataURL('image/png');    
             const signatureImgElement = document.createElement('img');
-            signatureImgElement.className = 'embedded-signature'; 
+            signatureImgElement.className = 'embedded-signature';    
             signatureImgElement.src = dataURL;
             
             const signatureInfo = {
-                element: signatureImgElement, 
-                page: targetInfo.page, 
-                x: targetInfo.x_coord || targetInfo.x, // Usar x_coord/y_coord si es de marker, x/y si es de activeSignatureBoxInfo
-                y: targetInfo.y_coord || targetInfo.y, 
-                width: targetInfo.width_val || targetInfo.width, 
-                height: targetInfo.height_val || targetInfo.height, 
-                dataURL: dataURL, 
-                // Añadir una referencia al ID del marcador si es una firma de Usuario B
+                element: signatureImgElement,    
+                page: targetInfo.page,    
+                x: targetInfo.x_coord || targetInfo.x, 
+                y: targetInfo.y_coord || targetInfo.y,    
+                width: targetInfo.width_val || targetInfo.width,    
+                height: targetInfo.height_val || targetInfo.height,    
+                dataURL: dataURL,    
                 marker_id_ref: isUserBSignature ? targetInfo.marker_id : undefined
             };
-            // Eliminar cualquier firma existente para este marcador antes de añadir la nueva
-            embeddedSignatures = embeddedSignatures.filter(sig => sig.marker_id_ref !== signatureInfo.marker_id_ref);
-            // Y si ya existe el elemento, removerlo del DOM
-            const existingEl = document.querySelector(`.embedded-signature[data-marker-id-ref="${signatureInfo.marker_id_ref}"]`);
-            if (existingEl) existingEl.remove();
-
-            signatureImgElement.setAttribute('data-marker-id-ref', signatureInfo.marker_id_ref); // Para poder identificarlo
-            embeddedSignatures.push(signatureInfo); 
-            pdfViewer.appendChild(signatureImgElement); 
             
-            if (!isUserBSignature && activeSignatureBoxInfo.element) { // Solo si es firma de Usuario A, remover el cuadro azul
+            // Eliminar firma anterior si existe para el mismo marker_id_ref
+            if (signatureInfo.marker_id_ref) {
+                const existingSigIndex = embeddedSignatures.findIndex(sig => sig.marker_id_ref === signatureInfo.marker_id_ref);
+                if (existingSigIndex > -1) {
+                    const oldSigElement = embeddedSignatures[existingSigIndex].element;
+                    if (oldSigElement && oldSigElement.parentElement) {
+                        oldSigElement.remove();
+                    }
+                    embeddedSignatures.splice(existingSigIndex, 1);
+                }
+            }
+
+
+            signatureImgElement.setAttribute('data-marker-id-ref', signatureInfo.marker_id_ref || `userA_${Date.now()}`); 
+            embeddedSignatures.push(signatureInfo);    
+            pdfViewer.appendChild(signatureImgElement);    
+            
+            if (!isUserBSignature && activeSignatureBoxInfo && activeSignatureBoxInfo.element) { 
                 console.log('[embedSignature] Removiendo el cuadro de firma confirmado (era signatureBoxEl) y anulando signatureBoxEl.');
-                activeSignatureBoxInfo.element.remove(); 
-                signatureBoxEl = null; 
-                activeSignatureBoxInfo = null; 
+                activeSignatureBoxInfo.element.remove();    
+                signatureBoxEl = null;    
+                activeSignatureBoxInfo = null;    
             } else if (isUserBSignature) {
-                // Si es firma de Usuario B, remover el área del marcador de Usuario B
                 const userBArea = document.getElementById('user-b-sig-area');
                 if (userBArea) userBArea.remove();
-                markerDataForUserB = null; // Marcar como firmado para que no se re-muestre el área de clic
+                // No limpiar markerDataForUserB aquí, se usa para la subida a Supabase. 
+                // La UI ya no mostrará el area de click porque la firma está embebida.
             }
             
             if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
-            repositionSignatures(); 
+            repositionSignatures();    
         }
 
+
         function repositionSignatures() {
-            if (!pdfViewer || !canvas || !pdfDoc) return; 
+            if (!pdfViewer || !canvas || !pdfDoc) return;    
             const viewerRect = pdfViewer.getBoundingClientRect();
-            const pdfCanvasRect = canvas.getBoundingClientRect(); 
-            if (pdfCanvasRect.width === 0 || pdfCanvasRect.height === 0) return; 
+            const pdfCanvasRect = canvas.getBoundingClientRect();    
+            if (pdfCanvasRect.width === 0 || pdfCanvasRect.height === 0) return;    
 
             const pdfCanvasScreenLeftInViewer = pdfCanvasRect.left - viewerRect.left;
             const pdfCanvasScreenTopInViewer = pdfCanvasRect.top - viewerRect.top;
             
             embeddedSignatures.forEach(sig => {
                 if (sig.element) {
-                    if (sig.page === currentPage) { 
+                    if (sig.page === currentPage) {    
                         const displayX = (sig.x * scale) + pdfCanvasScreenLeftInViewer;
                         const displayY = (sig.y * scale) + pdfCanvasScreenTopInViewer;
                         const displayWidth = sig.width * scale;
@@ -1737,9 +1807,9 @@
                         sig.element.style.top = `${displayY}px`;
                         sig.element.style.width = `${displayWidth}px`;
                         sig.element.style.height = `${displayHeight}px`;
-                        sig.element.style.display = 'block'; 
+                        sig.element.style.display = 'block';    
                     } else {
-                        sig.element.style.display = 'none'; 
+                        sig.element.style.display = 'none';    
                     }
                 }
             });
@@ -1751,25 +1821,28 @@
                 const headerHeight = headerElement.offsetHeight;
                 pdfViewer.style.height = `calc(100vh - ${headerHeight}px)`;
             }
-            if (pdfDoc) { 
-                renderPage(currentPage); 
+            if (pdfDoc) {    
+                renderPage(currentPage);    
             } else {
+                // Si no hay PDF, ocultar elementos que dependen de él
+                if(canvas) context.clearRect(0, 0, canvas.width, canvas.height);
+                document.querySelectorAll('.embedded-signature').forEach(el => el.style.display = 'none');
                 if (activeSignatureBoxInfo && activeSignatureBoxInfo.element) {
                     activeSignatureBoxInfo.element.style.display = 'none';
                 }
                 const userBArea = document.getElementById('user-b-sig-area');
-                if(userBArea) userBArea.remove();
+                if(userBArea) userBArea.style.display = 'none'; // Ocultar, no remover
             }
         }
+
 
         function displayMarkerForUserB(marker) {
             if (!pdfDoc || !marker || marker.page !== currentPage || rendering) return;
 
-            // No mostrar el marcador de Usuario B si ya tenemos una firma incrustada para él
             const isMarkerAlreadySignedLocally = embeddedSignatures.some(sig => sig.marker_id_ref === marker.marker_id);
             if (isMarkerAlreadySignedLocally) {
                 const existingUserBArea = document.getElementById('user-b-sig-area');
-                if (existingUserBArea) existingUserBArea.remove();
+                if (existingUserBArea) existingUserBArea.style.display = 'none'; // Ocultar si ya está firmado
                 return;
             }
 
@@ -1781,13 +1854,13 @@
                 userBSignatureAreaEl.innerHTML = '<span>Haz clic aquí para firmar</span>';
                 pdfViewer.appendChild(userBSignatureAreaEl);
             }
-            userBSignatureAreaEl.style.display = 'flex'; 
+            userBSignatureAreaEl.style.display = 'flex';    
 
             const canvasRect = canvas.getBoundingClientRect();
             const viewerRect = pdfViewer.getBoundingClientRect();
             if (canvasRect.width === 0 || canvasRect.height === 0) {
                 console.warn("Canvas no listo para posicionar área de User B, reintentando...");
-                requestAnimationFrame(() => displayMarkerForUserB(marker)); 
+                requestAnimationFrame(() => displayMarkerForUserB(marker));    
                 return;
             }
 
@@ -1801,7 +1874,6 @@
             userBSignatureAreaEl.style.width = `${displayWidth}px`;
             userBSignatureAreaEl.style.height = `${displayHeight}px`;
 
-            // Establecer el evento de clic para abrir el modal de firma
             userBSignatureAreaEl.onclick = () => {
                 openSignatureModalForUserB(marker);
             };
@@ -1838,9 +1910,9 @@
             const confirmBtn = document.createElement('button');
             confirmBtn.className = 'signature-control-btn confirm';
             confirmBtn.textContent = '✔️ Confirmar y Enviar Firma';
-            confirmBtn.onclick = async () => { 
+            confirmBtn.onclick = async () => {    
                 const signatureDataURL = signaturePadCanvasEl.toDataURL('image/png');
-                const tempCanvasTest = document.createElement('canvas');
+                const tempCanvasTest = document.createElement('canvas'); // Para verificar si está vacío
                 tempCanvasTest.width = signaturePadCanvasEl.width;
                 tempCanvasTest.height = signaturePadCanvasEl.height;
                 if (signatureDataURL === tempCanvasTest.toDataURL()) {
@@ -1848,8 +1920,8 @@
                     return;
                 }
                 
-                // Antes de cerrar el modal, incrustar la firma localmente
-                embedSignature(true, markerToSign); // True para indicar que es de Usuario B
+                // Llamar a embedSignature ANTES de guardar en Supabase para UI inmediata
+                embedSignature(true, markerToSign); 
                 
                 if (signatureModalEl) { signatureModalEl.remove(); signatureModalEl = null; }
                 await saveUserBSignatureToSupabase(markerToSign, signatureDataURL);
@@ -1870,13 +1942,14 @@
                 signaturePadCanvasEl.style.width = `${rect.width}px`;
                 signaturePadCanvasEl.style.height = `${rect.height}px`;
                 signaturePadCtxEl.scale(dpr, dpr);
-                signaturePadCtxEl.lineWidth = 1.5;
+                signaturePadCtxEl.lineWidth = 1.8;
                 signaturePadCtxEl.lineCap = 'round';
                 signaturePadCtxEl.lineJoin = 'round';
                 signaturePadCtxEl.strokeStyle = '#000000';
             });
             setupSignaturePadDrawingEventsEl();
         }
+
 
         async function saveUserBSignatureToSupabase(marker, signatureDataURL) {
             if (!supabaseClient) {
@@ -1894,11 +1967,11 @@
                 console.log("[saveUserBSignatureToSupabase] Intentando subir firma a Storage con ruta:", signatureStoragePath);
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
-                    .from('pdfs') 
+                    .from('pdfs')    // Asegúrate que el bucket sea el correcto para firmas, o usa uno dedicado
                     .upload(signatureStoragePath, blob, {
                         contentType: 'image/png',
                         cacheControl: '3600',
-                        upsert: true
+                        upsert: true // Sobrescribir si ya existe para este marker_id
                     });
                 if (uploadError) throw new Error(`Error al subir firma a Storage: ${uploadError.message}`);
 
@@ -1906,34 +1979,26 @@
                     .from('signature_markers')
                     .update({
                         status: 'signed_by_user_b',
-                        signed_signature_storage_path: signatureStoragePath, 
+                        signed_signature_storage_path: signatureStoragePath,    // Guardar el path de la firma en Storage
                         signed_at: new Date().toISOString()
                     })
                     .eq('marker_id', marker.marker_id)
-                    .eq('doc_id', marker.doc_id);
+                    .eq('doc_id', marker.doc_id); // Asegurar que actualizamos el correcto
                 if (updateError) throw new Error(`Error al actualizar marcador: ${updateError.message}`);
 
                 showMessage("¡Firma enviada exitosamente!\nPuedes cerrar esta ventana.");
                 
-                // NOTA: La lógica de eliminar el área de marcador y agregar la imagen al DOM del visor
-                // se ha movido a `embedSignature(true, markerToSign)` para asegurar que se haga
-                // inmediatamente al confirmar la firma, antes de la subida a Supabase.
-                // Esto mejora la respuesta de la UI.
-                
-                // Habilitar botones de Guardar y Compartir para Usuario B
+                // Habilitar botones de Guardar y Compartir para Usuario B después de firmar
                 const savePdfBtn = document.getElementById('save-pdf-btn');
-                const sharePdfBtn = document.getElementById('share-pdf-btn');
+                const sharePdfBtn = document.getElementById('share-pdf-btn');    
                 
-                // *** ¡AQUÍ ESTÁ EL CAMBIO PARA EL USUARIO B! ***
-                // Ahora, el botón "Guardar PDF Final" llama a downloadPDF()
                 if (savePdfBtn) {
                     savePdfBtn.style.display = 'inline-block';
-                    savePdfBtn.textContent = '💾 Descargar PDF Final'; // Cambiar texto
-                    savePdfBtn.onclick = downloadPDF; // Llama a la función de descarga local
+                    savePdfBtn.textContent = '💾 Descargar PDF Final'; 
+                    savePdfBtn.onclick = downloadPDF; 
                 }
-                // El botón "Compartir PDF Final" SIEMPRE sube a Supabase
                 if (sharePdfBtn) {
-                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; 
+                    sharePdfBtn.textContent = '📤 Compartir PDF Final';    
                     sharePdfBtn.onclick = () => shareSignedPdfByB(marker.doc_id, originalFileName);
                     sharePdfBtn.style.display = 'inline-block';
                 }
@@ -1949,7 +2014,6 @@
             }
         }
 
-        // Esta función SIEMPRE sube a Supabase, NO se usará para la descarga local del botón "Guardar"
         async function shareSignedPdfByB(docId, fileName) {
             if (!pdfDoc || !supabaseClient) {
                 showMessage("Error: Documento o cliente Supabase no disponibles para compartir/subir.");
@@ -1958,21 +2022,21 @@
             showMessage("Preparando PDF firmado para subir...");
 
             try {
-                const pdfBlob = await getProcessedPdfBlob(); // Obtiene el PDF con todas las firmas incrustadas
+                const pdfBlob = await getProcessedPdfBlob(); 
                 if (!pdfBlob) {
                     showMessage("No se pudo generar el PDF firmado para subir.");
                     return;
                 }
 
                 const signedFileName = fileName.replace(/\.pdf$/i, '-firmado-final.pdf');
-                const storagePath = `signed_documents/${docId}/${signedFileName}`; // Carpeta para PDFs finales en Supabase
+                const storagePath = `signed_documents/${docId}/${signedFileName}`; 
 
                 const { data: uploadData, error: uploadError } = await supabaseClient.storage
-                    .from('pdfs')
+                    .from('pdfs') // O el bucket que uses para documentos finales
                     .upload(storagePath, pdfBlob, {
                         contentType: 'application/pdf',
                         cacheControl: '3600',
-                        upsert: true
+                        upsert: true // Sobrescribir si ya existe
                     });
 
                 if (uploadError) {
@@ -1980,9 +2044,8 @@
                     throw new Error(`Error al subir el PDF firmado: ${uploadError.message}`);
                 }
 
-                // Generar URL para compartir/descargar el PDF final desde Supabase
                 const { data: publicUrlData } = supabaseClient.storage
-                    .from('pdfs')
+                    .from('pdfs') // Mismo bucket
                     .getPublicUrl(storagePath);
 
                 const finalShareUrl = publicUrlData.publicUrl;
@@ -1995,9 +2058,9 @@
             }
         }
 
+
         async function checkSignaturesStatus() {
             if (!sharedDocIdForUserA) {
-                // Intenta recuperar desde localStorage si el usuario volvió a la página
                 if (typeof Storage !== "undefined") {
                     const lastShared = localStorage.getItem('lastSharedDocIdForUserA');
                     if (lastShared) {
@@ -2011,10 +2074,8 @@
                     return;
                 }
             }
-            if (!supabaseClient || !pdfDoc) { // pdfDoc puede no estar cargado si el usuario solo volvió a la página
+            if (!supabaseClient || !pdfDoc) { 
                 showMessage("Cliente Supabase no disponible o el PDF original no está cargado en esta sesión.");
-                // Aquí podrías ofrecer recargar el PDF si tienes su path/blob almacenado,
-                // pero por ahora, se asume que el PDF debe estar cargado para superponer firmas.
                 return;
             }
             showMessage("Verificando estado de las firmas...");
@@ -2036,17 +2097,17 @@
                     if (marker.status === 'signed_by_user_b' && marker.signed_signature_storage_path) {
                         const existingSignature = embeddedSignatures.find(sig => sig.marker_id_ref === marker.marker_id);
                         if (existingSignature) {
+                            // Asegurarse que esté en el DOM si no lo está
                             if(existingSignature.element && !pdfViewer.contains(existingSignature.element)){
-                                // Si ya está en el array local pero no en el DOM (por un cambio de página, por ejemplo)
-                                pdfViewer.appendChild(existingSignature.element); 
+                                pdfViewer.appendChild(existingSignature.element);    
                             }
                             console.log(`Firma para ${marker.marker_id} ya está en embeddedSignatures o siendo procesada.`);
-                            continue; // Saltar si ya está cargada
+                            continue; 
                         }
                         
                         console.log(`Descargando firma para marcador ${marker.marker_id} desde ${marker.signed_signature_storage_path}`);
                         const { data: signatureDownloadData, error: signatureDownloadError } = await supabaseClient.storage
-                            .from('pdfs') 
+                            .from('pdfs')    // Bucket donde se guardan las firmas PNG
                             .download(marker.signed_signature_storage_path);
 
                         if (signatureDownloadError) {
@@ -2065,9 +2126,9 @@
                         const signatureImgElement = document.createElement('img');
                         signatureImgElement.className = 'embedded-signature';
                         signatureImgElement.src = signatureDataURL;
-                        signatureImgElement.setAttribute('data-marker-id-ref', marker.marker_id); // Asignar el ID del marcador al elemento de imagen
+                        signatureImgElement.setAttribute('data-marker-id-ref', marker.marker_id); 
 
-                        pdfViewer.appendChild(signatureImgElement); 
+                        pdfViewer.appendChild(signatureImgElement);    
 
                         const signatureInfo = {
                             element: signatureImgElement,
@@ -2077,7 +2138,7 @@
                             width: marker.width_val,
                             height: marker.height_val,
                             dataURL: signatureDataURL,
-                            marker_id_ref: marker.marker_id // Guardar la referencia al marcador
+                            marker_id_ref: marker.marker_id 
                         };
                         embeddedSignatures.push(signatureInfo);
                         newSignaturesLoaded = true;
@@ -2104,7 +2165,7 @@
                         }
                     }
                 }
-                repositionSignatures(); 
+                repositionSignatures();    
                 repositionActiveSignatureBox();
 
             } catch (error) {
@@ -2123,56 +2184,47 @@
             else if (isDraggingPdf && e.touches.length === 1 && !pinchState.active) handlePdfMove(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
 
-        window.addEventListener('mouseup', () => { 
+        window.addEventListener('mouseup', () => {    
             if (isDraggingPdf) {
                 isDraggingPdf = false;
                 canvas.style.cursor = (isZoomed || (parseFloat(canvas.style.width) > pdfViewer.clientWidth || parseFloat(canvas.style.height) > pdfViewer.clientHeight)) ? 'grab' : 'default';
             }
         });
-        window.addEventListener('touchend', (e) => { 
+        window.addEventListener('touchend', (e) => {    
             if (isDraggingPdf) isDraggingPdf = false;
-            if (pinchState.active && e.touches.length < 2) pinchState.active = false; 
+            if (pinchState.active && e.touches.length < 2) pinchState.active = false;    
         });
         
-        // Variable para almacenar la suscripción a Realtime
         let realtimeSubscription = null;
 
-        /**
-         * Configura un listener de Realtime para la tabla signature_markers.
-         * Se desuscribe de cualquier listener anterior para evitar duplicados.
-         */
         async function setupRealtimeListener() {
             if (!supabaseClient) {
                 console.warn("Realtime: Cliente Supabase no inicializado, no se puede configurar el listener.");
                 return;
             }
 
-            // Desuscribir de cualquier suscripción anterior para evitar duplicados
             if (realtimeSubscription) {
                 console.log("Realtime: Desuscribiendo de la suscripción anterior.");
-                await supabaseClient.removeChannel(realtimeSubscription);
+                await supabaseClient.removeChannel(realtimeSubscription); // Mejor usar removeChannel
                 realtimeSubscription = null;
             }
 
             if (sharedDocIdForUserA) {
                 console.log(`Realtime: Intentando suscribir a cambios para doc_id: ${sharedDocIdForUserA}`);
                 realtimeSubscription = supabaseClient
-                    .channel(`public:signature_markers:doc_id=eq.${sharedDocIdForUserA}`) // Canal específico por doc_id
+                    .channel(`public:signature_markers:doc_id=eq.${sharedDocIdForUserA}`) 
                     .on('postgres_changes', {
-                        event: 'UPDATE', // Solo escuchamos cuando se actualiza un registro
+                        event: 'UPDATE', 
                         schema: 'public',
                         table: 'signature_markers',
-                        filter: `doc_id=eq.${sharedDocIdForUserA}` // Filtramos por el ID de nuestro documento
+                        filter: `doc_id=eq.${sharedDocIdForUserA}` 
                     }, payload => {
                         console.log('Realtime: Cambio detectado en signature_markers:', payload);
-                        // Comprobamos si el cambio es relevante para la firma del usuario B
                         if (payload.new && payload.new.status === 'signed_by_user_b' && payload.new.signed_signature_storage_path) {
-                            // Verificamos si esta firma ya está cargada en nuestro array local para evitar duplicados
                             const isAlreadyEmbedded = embeddedSignatures.some(sig => sig.marker_id_ref === payload.new.marker_id);
                             if (!isAlreadyEmbedded) {
                                 showMessage('¡Usuario B ha firmado el documento! Actualizando documento...');
-                                // Llamamos a checkSignaturesStatus para que se encargue de descargar y renderizar la nueva firma
-                                checkSignaturesStatus(); 
+                                checkSignaturesStatus();    
                             } else {
                                 console.log(`Realtime: Firma para marcador ${payload.new.marker_id} ya incrustada.`);
                             }
@@ -2181,19 +2233,16 @@
                     .subscribe((status, err) => {
                         if (status === 'SUBSCRIBED') {
                             console.log(`Realtime: Suscrito con éxito al documento ${sharedDocIdForUserA}`);
-                            // Opcional: Llama a checkSignaturesStatus() inmediatamente después de suscribirte
-                            // para cargar cualquier firma que haya ocurrido antes de que te suscribieras (si el PDF ya está cargado).
-                            if (pdfDoc) { 
+                            if (pdfDoc) {    // Solo verificar si el PDF ya está cargado (para Usuario A)
                                 checkSignaturesStatus();
                             }
-                        } else if (status === 'CHANNEL_ERROR') {
-                            console.error('Realtime: Error en el canal:', err);
-                            // !!! AQUÍ ESTÁ LA LÍNEA MODIFICADA !!!
-                            showMessage(`Error en la conexión en tiempo real: ${err ? err.message : 'Error desconocido de canal'}. Intenta refrescar.`);
+                        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { // Manejar TIMED_OUT también
+                            console.error(`Realtime: Error en el canal (${status}):`, err);
+                            showMessage(`Error en la conexión en tiempo real (${status}): ${err ? err.message : 'Error desconocido'}. Intenta refrescar.`);
                         } else if (status === 'CLOSED') {
                             console.log('Realtime: Canal cerrado.');
                         } else {
-                             console.log(`Realtime: Estado de suscripción: ${status}`);
+                                console.log(`Realtime: Estado de suscripción: ${status}`);
                         }
                     });
             } else {
@@ -2202,45 +2251,37 @@
         }
 
 
-        // Modificar el listener de 'load' para llamar a setupRealtimeListener
-        window.addEventListener('load', async () => { 
+        window.addEventListener('load', async () => {    
             adjustViewerHeightAndRender();
             const urlParams = new URLSearchParams(window.location.search);
             const docIdFromUrl = urlParams.get('doc_id');
             const mode = urlParams.get('mode');
 
-            // Lógica para restaurar sharedDocIdForUserA para el Usuario A o establecerlo para el Usuario B
             if (docIdFromUrl) {
-                // Si hay doc_id en la URL, este es el documento relevante para esta sesión
-                sharedDocIdForUserA = docIdFromUrl; // Se usa para la suscripción Realtime y para checkSignaturesStatus
+                sharedDocIdForUserA = docIdFromUrl; 
             } else if (typeof Storage !== "undefined") {
-                // Si no hay doc_id en la URL, intentamos recuperarlo de localStorage (para Usuario A que refrescó)
                 const lastShared = localStorage.getItem('lastSharedDocIdForUserA');
                 if (lastShared) {
                     sharedDocIdForUserA = lastShared;
                 }
             }
 
-            // Mostrar el botón "Verificar Firmas" si hay un doc_id compartido (para Usuario A)
             const checkBtn = document.getElementById('check-signatures-btn');
-            if (checkBtn && sharedDocIdForUserA) {
+            if (checkBtn && sharedDocIdForUserA && mode !== 'sign_for_user_b') { // Mostrar solo si no es User B
                 checkBtn.style.display = 'inline-block';
             }
             
-            // Lógica específica para el modo de firma del Usuario B
-            if (docIdFromUrl && mode === 'sign_for_user_b') { 
+            if (docIdFromUrl && mode === 'sign_for_user_b') {    
                 console.log(`Modo Firmante (Usuario B): Cargando documento con ID: ${docIdFromUrl}`);
                 document.getElementById('file-input').style.display = 'none';
                 const addUserASigButton = document.getElementById('toolbar').querySelector('button[onclick="addSignatureBox()"]');
                 if(addUserASigButton) addUserASigButton.style.display = 'none';
                 
-                // Ocultamos los botones de Guardar y Compartir para Usuario B al cargar inicialmente
-                // Se habilitarán y cambiarán de función una vez que el PDF sea firmado.
                 const savePdfBtn = document.getElementById('save-pdf-btn');
                 if(savePdfBtn) savePdfBtn.style.display = 'none';
-                const sharePdfBtn = document.getElementById('share-pdf-btn'); 
+                const sharePdfBtn = document.getElementById('share-pdf-btn');    
                 if(sharePdfBtn) sharePdfBtn.style.display = 'none';
-                if(checkBtn) checkBtn.style.display = 'none'; // El usuario B no debería usar este botón inicialmente
+                if(checkBtn) checkBtn.style.display = 'none'; 
 
                 showMessage(`Cargando documento ${docIdFromUrl} para firmar...`);
 
@@ -2265,10 +2306,10 @@
                         return;
                     }
                     
-                    markerDataForUserB = targetMarker; 
+                    markerDataForUserB = targetMarker;    
                     let pdfPathInStorage = markerDataForUserB.pdf_storage_path;
 
-                    if (!pdfPathInStorage) { 
+                    if (!pdfPathInStorage) {    
                         console.warn("pdf_storage_path no encontrado en el marcador, intentando listar archivos...");
                         const { data: fileList, error: listError } = await supabaseClient.storage
                             .from('pdfs')
@@ -2276,15 +2317,15 @@
                         if (listError || !fileList || fileList.length === 0) {
                             throw new Error(`No se encontró el archivo PDF en storage para ${docIdFromUrl}: ${listError ? listError.message : 'Lista vacía'}`);
                         }
-                        pdfPathInStorage = fileList[0].name; 
+                        pdfPathInStorage = fileList[0].name;    
                         originalFileName = fileList[0].name;
-                        pdfPathInStorage = `documents/${docIdFromUrl}/${pdfPathInStorage}`; 
+                        pdfPathInStorage = `documents/${docIdFromUrl}/${pdfPathInStorage}`;    
                     } else {
-                        originalFileName = pdfPathInStorage.split('/').pop(); 
+                        originalFileName = pdfPathInStorage.split('/').pop();    
                     }
 
                     const { data: pdfBlobData, error: downloadError } = await supabaseClient.storage
-                        .from('pdfs') 
+                        .from('pdfs')    
                         .download(pdfPathInStorage);
 
                     if (downloadError) throw new Error(`Error descargando PDF (${pdfPathInStorage}): ${downloadError.message}`);
@@ -2292,14 +2333,14 @@
 
                     const reader = new FileReader();
                     reader.onload = async function (e_reader) {
-                        try { 
+                        try {    
                             if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
                                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
                             }
                             const loadingTask = pdfjsLib.getDocument({ data: e_reader.target.result });
                             pdfDoc = await loadingTask.promise;
                             totalPages = pdfDoc.numPages;
-                            currentPage = markerDataForUserB.page;
+                            currentPage = markerDataForUserB.page; // Ir a la página del marcador
                             translatePos = { x: 0, y: 0 }; scale = 1;
                             document.getElementById('zoom-slider').value = scale;
                             document.getElementById('total-pages').textContent = totalPages;
@@ -2310,7 +2351,7 @@
                             if (signatureBoxEl) { signatureBoxEl.remove(); signatureBoxEl = null; activeSignatureBoxInfo = null;}
                             pageVisitCounts = {}; totalPageViewsSession = 0;
 
-                            await renderPage(currentPage); 
+                            await renderPage(currentPage);    
 
                             if (markerDataForUserB.status === 'signed_by_user_b' && markerDataForUserB.signed_signature_storage_path) {
                                 showMessage("Este documento ya ha sido firmado. Mostrando firma...");
@@ -2319,36 +2360,39 @@
                                 const sigDataURL = await new Promise((resolve, reject) => {
                                         const r = new FileReader(); r.onloadend = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(sigBlob);
                                 });
-                                embedSignature(true, { 
+                                // Preparar info para embedSignature
+                                const signatureToEmbed = {
                                     page: markerDataForUserB.page,
-                                    x_coord: markerDataForUserB.x_coord,
+                                    x_coord: markerDataForUserB.x_coord, // usa los nombres de columna de la tabla
                                     y_coord: markerDataForUserB.y_coord,
                                     width_val: markerDataForUserB.width_val,
                                     height_val: markerDataForUserB.height_val,
-                                    dataURL: sigDataURL,
-                                    marker_id: markerDataForUserB.marker_id
-                                });
+                                    dataURL: sigDataURL, // El dataURL de la firma descargada
+                                    marker_id: markerDataForUserB.marker_id // El ID del marcador original
+                                };
+                                embedSignature(true, signatureToEmbed); // true para indicar que es de User B
 
-                                // Habilitar y configurar botones para Usuario B después de cargar PDF ya firmado
-                                const savePdfBtn = document.getElementById('save-pdf-btn');
-                                const sharePdfBtn = document.getElementById('share-pdf-btn');
-                                if (savePdfBtn) {
-                                    savePdfBtn.style.display = 'inline-block';
-                                    savePdfBtn.textContent = '💾 Descargar PDF Final'; // Texto para descarga local
-                                    savePdfBtn.onclick = downloadPDF; // Llama a la función de descarga local
+                                // Habilitar botones para User B si el doc ya estaba firmado
+                                const savePdfBtnUserB = document.getElementById('save-pdf-btn');
+                                const sharePdfBtnUserB = document.getElementById('share-pdf-btn');
+                                if (savePdfBtnUserB) {
+                                    savePdfBtnUserB.style.display = 'inline-block';
+                                    savePdfBtnUserB.textContent = '💾 Descargar PDF Final';
+                                    savePdfBtnUserB.onclick = downloadPDF;
                                 }
-                                if (sharePdfBtn) {
-                                    sharePdfBtn.style.display = 'inline-block';
-                                    sharePdfBtn.textContent = '📤 Compartir PDF Final'; // Sigue siendo la subida a Supabase
-                                    sharePdfBtn.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
+                                if (sharePdfBtnUserB) {
+                                    sharePdfBtnUserB.style.display = 'inline-block';
+                                    sharePdfBtnUserB.textContent = '📤 Compartir PDF Final';
+                                    sharePdfBtnUserB.onclick = () => shareSignedPdfByB(docIdFromUrl, originalFileName);
                                 }
+
 
                             } else if (markerDataForUserB.status === 'pending_user_b_signature') {
                                     showMessage("Documento cargado. Haz clic en el área indicada para firmar.");
-                                }
+                            }
                         } catch (pdfLoadError) {
-                               console.error("Error procesando PDF para Usuario B:", pdfLoadError);
-                               showMessage(`Error al procesar el PDF: ${pdfLoadError.message}`);
+                                console.error("Error procesando PDF para Usuario B:", pdfLoadError);
+                                showMessage(`Error al procesar el PDF: ${pdfLoadError.message}`);
                         }
                     };
                     reader.readAsArrayBuffer(pdfBlobData);
@@ -2358,14 +2402,12 @@
                     showMessage(`Error al cargar el documento: ${error.message}`);
                     if (window.history.replaceState) { window.history.replaceState({}, document.title, window.location.pathname); }
                 }
-            } else if (docIdFromUrl && mode === 'sign') { 
+            } else if (docIdFromUrl && mode === 'sign') {    // Modo antiguo, si aún es necesario
                 console.log(`Modo Firmante (Antiguo): Cargando documento con ID: ${docIdFromUrl}`);
-                showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto o no completamente funcional con las nuevas características.)`);
+                showMessage(`Modo Firmante (Antiguo) detectado.\nID del Documento: ${docIdFromUrl}\n\n(Este modo puede estar obsoleto.)`);
                 document.getElementById('file-input').style.display = 'none';
             }
             
-            // Llama a la función de Realtime listener después de que sharedDocIdForUserA
-            // haya sido establecido (tanto para Usuario A como para Usuario B si aplica)
             setupRealtimeListener();
         });
         window.addEventListener('resize', adjustViewerHeightAndRender);
